@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime
 from core.db import get_pool
 
 logger = logging.getLogger(__name__)
@@ -35,25 +34,25 @@ class BirthdayRepository:
 
     async def set_birthday(
         self, user_id: int, guild_id: int,
-        birth_month: int, birth_day: int, timezone: str,
+        birth_month: int, birth_day: int, region: str,
     ) -> None:
         async with get_pool().acquire() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(
                     """
                     INSERT INTO dbot_user_birthdays
-                        (user_id, guild_id, birth_month, birth_day, timezone)
+                        (user_id, guild_id, birth_month, birth_day, region)
                     VALUES (%s, %s, %s, %s, %s)
                     ON DUPLICATE KEY UPDATE
                         birth_month       = VALUES(birth_month),
                         birth_day         = VALUES(birth_day),
-                        timezone          = VALUES(timezone),
+                        region            = VALUES(region),
                         last_greeted_year = NULL
                     """,
-                    (user_id, guild_id, birth_month, birth_day, timezone),
+                    (user_id, guild_id, birth_month, birth_day, region),
                 )
-        logger.info("Birthday saved: user=%s guild=%s %s/%s tz=%s",
-                    user_id, guild_id, birth_month, birth_day, timezone)
+        logger.info("Birthday saved: user=%s guild=%s %s/%s region=%s",
+                    user_id, guild_id, birth_month, birth_day, region)
 
     async def get_birthday(self, user_id: int, guild_id: int) -> dict | None:
         async with get_pool().acquire() as conn:
@@ -73,15 +72,22 @@ class BirthdayRepository:
                 )
                 return cur.rowcount > 0
 
-    async def get_all_birthdays_with_timezone(self) -> list[dict]:
+    async def get_birthdays_for_region(
+        self, region: str, month: int, day: int, year: int
+    ) -> list[dict]:
         async with get_pool().acquire() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(
                     """
-                    SELECT ub.*, g.birthday_channel_id
+                    SELECT ub.*, g.birthday_channel_id, %s AS _greet_year
                     FROM dbot_user_birthdays ub
                     JOIN dbot_guilds g ON g.guild_id = ub.guild_id
-                    """
+                    WHERE ub.region = %s
+                      AND ub.birth_month = %s
+                      AND ub.birth_day = %s
+                      AND (ub.last_greeted_year IS NULL OR ub.last_greeted_year != %s)
+                    """,
+                    (year, region, month, day, year),
                 )
                 return await cur.fetchall()
 

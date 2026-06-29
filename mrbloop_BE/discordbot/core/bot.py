@@ -45,7 +45,7 @@ class MrBloopBot(commands.Bot):
         for guild in self.guilds:
             await self.birthday_repo.upsert_guild(guild.id, guild.name)
 
-        self.scheduler.add_birthday_job(self.birthday_service.check_and_greet_birthdays)
+        self.scheduler.add_birthday_jobs(self.birthday_service.check_and_greet_birthdays)
         self.scheduler.start()
 
         await self.change_presence(

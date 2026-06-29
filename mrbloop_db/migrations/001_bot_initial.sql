@@ -21,16 +21,16 @@ CREATE TABLE IF NOT EXISTS dbot_guilds (
 -- Verjaardagen
 -- Opslag strategie:
 --   birth_month + birth_day : alleen dag/maand, geen jaar (privacy)
---   timezone                : IANA naam, bijv. "Europe/Brussels"
+--   region                  : AMERICAS | EMEA | APAC (bepaalt wanneer de felicitatie verstuurd wordt)
 --   last_greeted_year       : voorkomt dubbele felicitaties in hetzelfde jaar
 CREATE TABLE IF NOT EXISTS dbot_user_birthdays (
-    id                BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT,
-    user_id           BIGINT UNSIGNED  NOT NULL,
-    guild_id          BIGINT UNSIGNED  NOT NULL,
-    birth_month       TINYINT UNSIGNED NOT NULL,   -- 1-12
-    birth_day         TINYINT UNSIGNED NOT NULL,   -- 1-31
-    timezone          VARCHAR(64)      NOT NULL DEFAULT 'UTC',
-    last_greeted_year YEAR             NULL DEFAULT NULL,
+    id                BIGINT UNSIGNED              NOT NULL AUTO_INCREMENT,
+    user_id           BIGINT UNSIGNED              NOT NULL,
+    guild_id          BIGINT UNSIGNED              NOT NULL,
+    birth_month       TINYINT UNSIGNED             NOT NULL,   -- 1-12
+    birth_day         TINYINT UNSIGNED             NOT NULL,   -- 1-31
+    region            ENUM('AMERICAS','EMEA','APAC') NOT NULL DEFAULT 'EMEA',
+    last_greeted_year YEAR                         NULL DEFAULT NULL,
     created_at        DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at        DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),

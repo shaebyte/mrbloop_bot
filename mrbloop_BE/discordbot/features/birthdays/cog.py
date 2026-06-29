@@ -5,8 +5,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from utils import is_valid_timezone, search_timezones
-from utils.timezone_helper import POPULAR_TIMEZONES
+from utils import Region, REGION_LABELS
 from .repository import BirthdayRepository
 from .service import BirthdayService
 
@@ -15,6 +14,12 @@ logger = logging.getLogger(__name__)
 MONTH_CHOICES = [
     app_commands.Choice(name=calendar.month_name[i], value=i)
     for i in range(1, 13)
+]
+
+REGION_CHOICES = [
+    app_commands.Choice(name=REGION_LABELS[Region.AMERICAS], value=Region.AMERICAS.value),
+    app_commands.Choice(name=REGION_LABELS[Region.EMEA],     value=Region.EMEA.value),
+    app_commands.Choice(name=REGION_LABELS[Region.APAC],     value=Region.APAC.value),
 ]
 
 
@@ -29,15 +34,15 @@ class BirthdayCog(commands.GroupCog, name="birthday"):
     @app_commands.describe(
         day="Day of your birthday (1-31)",
         month="Month of your birthday",
-        timezone="Your timezone, e.g. Europe/Brussels (type to search)",
+        region="Your region (determines when you receive the birthday message)",
     )
-    @app_commands.choices(month=MONTH_CHOICES)
+    @app_commands.choices(month=MONTH_CHOICES, region=REGION_CHOICES)
     async def set_birthday(
         self,
         interaction: discord.Interaction,
         day: app_commands.Range[int, 1, 31],
         month: app_commands.Choice[int],
-        timezone: str,
+        region: app_commands.Choice[str],
     ) -> None:
         await interaction.response.defer(ephemeral=True)
 
@@ -48,35 +53,20 @@ class BirthdayCog(commands.GroupCog, name="birthday"):
             )
             return
 
-        if not is_valid_timezone(timezone):
-            await interaction.followup.send(
-                f"❌ **{timezone}** is not a valid timezone.\n"
-                "Use e.g., `Europe/Brussels`, `America/New_York` or `Asia/Tokyo`.",
-                ephemeral=True,
-            )
-            return
-
         await self.repo.upsert_guild(interaction.guild_id, interaction.guild.name)
         await self.repo.set_birthday(
             user_id=interaction.user.id,
             guild_id=interaction.guild_id,
             birth_month=month.value,
             birth_day=day,
-            timezone=timezone,
+            region=region.value,
         )
 
         await interaction.followup.send(
             f"✅ Your birthday has been saved: **{day} {month.name}** "
-            f"(timezone: `{timezone}`)\n",
+            f"(region: `{region.name}`)",
             ephemeral=True,
         )
-
-    @set_birthday.autocomplete("timezone")
-    async def timezone_autocomplete(
-        self, interaction: discord.Interaction, current: str
-    ) -> list[app_commands.Choice[str]]:
-        results = POPULAR_TIMEZONES[:25] if not current else search_timezones(current, limit=25)
-        return [app_commands.Choice(name=tz, value=tz) for tz in results]
 
     @app_commands.command(name="delete", description="Delete your birthday information.")
     async def delete_birthday(self, interaction: discord.Interaction) -> None:
@@ -102,9 +92,10 @@ class BirthdayCog(commands.GroupCog, name="birthday"):
             )
             return
 
+        region_label = REGION_LABELS.get(Region(entry["region"]), entry["region"])
         embed = discord.Embed(title="🎂 Your Birthday", color=discord.Color.blurple())
         embed.add_field(name="Date", value=f"{entry['birth_day']} {calendar.month_name[entry['birth_month']]}", inline=True)
-        embed.add_field(name="Timezone", value=f"`{entry['timezone']}`", inline=True)
+        embed.add_field(name="Region", value=region_label, inline=True)
         await interaction.followup.send(embed=embed, ephemeral=True)
 
     @app_commands.command(name="channel", description="(Admin) Set the channel for birthday messages.")

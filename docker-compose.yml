@@ -32,19 +32,8 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # ─── AutoRedeemGifts: poller daemon ──────────────────────────────────────────
-  autoredeemgifts-poller:
-    build: ./mrbloop_BE/autoredeemgifts_v5
-    env_file:
-      - ./db.env
-      - ./mrbloop_BE/autoredeemgifts_v5/.env
-    depends_on:
-      mysql:
-        condition: service_healthy
-    restart: unless-stopped
-
-  # ─── AutoRedeemGifts: REST API ───────────────────────────────────────────────
-  autoredeemgifts-api:
+  # ─── AutoRedeemGifts: API + poller (lifespan) ────────────────────────────────
+  autoredeemgifts:
     build: ./mrbloop_BE/autoredeemgifts_v5
     env_file:
       - ./db.env
@@ -63,7 +52,7 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - autoredeemgifts-api
+      - autoredeemgifts
     restart: unless-stopped
 
 volumes:

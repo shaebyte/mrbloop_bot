@@ -22,9 +22,6 @@ class Settings:
     DB_POOL_SIZE: int = int(os.getenv("DB_POOL_SIZE", 5))
 
     # Birthday feature
-    # Congrats go out at 00:15 local time of the user
-    BIRTHDAY_GREET_HOUR: int = 0
-    BIRTHDAY_GREET_MINUTE: int = 15
     BIRTHDAY_CHANNEL_NAME: str = os.getenv("BIRTHDAY_CHANNEL_NAME", "general")
 
 

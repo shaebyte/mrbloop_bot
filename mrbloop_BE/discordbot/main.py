@@ -21,7 +21,6 @@ def setup_logging() -> None:
         datefmt="%Y-%m-%d %H:%M:%S",
         handlers=[
             logging.StreamHandler(sys.stdout),
-            logging.FileHandler("bot.log", encoding="utf-8"),
         ],
     )
     logging.getLogger("discord").setLevel(logging.WARNING)

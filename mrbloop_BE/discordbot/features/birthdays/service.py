@@ -1,10 +1,9 @@
 import logging
-from datetime import datetime
 
 import discord
 
 from config import settings
-from utils import is_birthday_time
+from utils import Region, get_region_date
 from .repository import BirthdayRepository
 
 logger = logging.getLogger(__name__)
@@ -15,25 +14,23 @@ class BirthdayService:
         self.bot = bot
         self.repo = repo
 
-    async def check_and_greet_birthdays(self) -> None:
-        """Polls every minute. Congratulates users who are celebrating their birthday at local 00:15."""
-        logger.debug("Birthday check...")
-        for entry in await self.repo.get_all_birthdays_with_timezone():
+    async def check_and_greet_birthdays(self, region: str) -> None:
+        date = get_region_date(Region(region))
+        logger.debug("Birthday check: region=%s date=%s", region, date)
+
+        entries = await self.repo.get_birthdays_for_region(
+            region=region,
+            month=date.month,
+            day=date.day,
+            year=date.year,
+        )
+        for entry in entries:
             try:
                 await self._process_entry(entry)
             except Exception as exc:
                 logger.error("Error processing entry id=%s: %s", entry.get("id"), exc, exc_info=True)
 
     async def _process_entry(self, entry: dict) -> None:
-        if not is_birthday_time(
-            tz_name=entry["timezone"],
-            birth_month=entry["birth_month"],
-            birth_day=entry["birth_day"],
-            greet_hour=settings.BIRTHDAY_GREET_HOUR,
-            greet_minute=settings.BIRTHDAY_GREET_MINUTE,
-        ):
-            return
-
         guild = self.bot.get_guild(entry["guild_id"])
         if not guild:
             return
@@ -47,8 +44,8 @@ class BirthdayService:
             return
 
         await self._send_birthday_message(channel, member)
-        await self.repo.mark_greeted(entry["id"], datetime.utcnow().year)
-        logger.info("Congratulated: %s in %s (%s)", member.display_name, guild.name, entry["timezone"])
+        await self.repo.mark_greeted(entry["id"], entry["_greet_year"])
+        logger.info("Congratulated: %s in %s (region=%s)", member.display_name, guild.name, entry["region"])
 
     async def _resolve_channel(
         self, guild: discord.Guild, channel_id: int | None
