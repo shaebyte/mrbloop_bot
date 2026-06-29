@@ -1,0 +1,9 @@
+CREATE USER 'newuser'@'%' IDENTIFIED BY 'SterkWachtwoord123!';
+
+SELECT user, host, plugin
+FROM mysql.user
+WHERE user = 'mrbloop';
+
+GRANT ALL PRIVILEGES ON mrbloop_db.* TO 'mrbloop'@'%';
+
+SHOW GRANTS FOR 'mrbloop'@'%';

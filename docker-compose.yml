@@ -1,0 +1,70 @@
+services:
+
+  # ─── Database ────────────────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    env_file:
+      - ./db.env
+    volumes:
+      # Init-scripts worden alfabetisch uitgevoerd bij het eerste opstarten
+      - ./mrbloop_db/migrations:/docker-entrypoint-initdb.d:ro
+      # Persistente opslag: data blijft behouden bij container restarts/rebuilds
+      - mysql_data:/var/lib/mysql
+    ports:
+      # Optioneel: verwijder deze regel als je geen directe toegang via MySQL Workbench nodig hebt
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  # ─── Discord bot ─────────────────────────────────────────────────────────────
+  discordbot:
+    build: ./mrbloop_BE/discordbot
+    env_file:
+      - ./db.env
+      - ./mrbloop_BE/discordbot/.env
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── AutoRedeemGifts: poller daemon ──────────────────────────────────────────
+  autoredeemgifts-poller:
+    build: ./mrbloop_BE/autoredeemgifts_v5
+    env_file:
+      - ./db.env
+      - ./mrbloop_BE/autoredeemgifts_v5/.env
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── AutoRedeemGifts: REST API ───────────────────────────────────────────────
+  autoredeemgifts-api:
+    build: ./mrbloop_BE/autoredeemgifts_v5
+    env_file:
+      - ./db.env
+      - ./mrbloop_BE/autoredeemgifts_v5/.env
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── Frontend + Nginx ────────────────────────────────────────────────────────
+  frontend:
+    build: ./mrbloop_FE
+    ports:
+      - "80:80"
+    depends_on:
+      - autoredeemgifts-api
+    restart: unless-stopped
+
+volumes:
+  mysql_data:

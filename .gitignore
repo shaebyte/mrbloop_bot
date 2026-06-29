@@ -1,0 +1,21 @@
+# Secrets & env files
+.env
+.env.*
+db.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.db
+
+# Logs
+*.log
+
+# Node
+node_modules/
+dist/
+
+# Claude
+CLAUDE.md
+CMD_COMMANDS.txt
