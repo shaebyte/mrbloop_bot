@@ -49,7 +49,7 @@ class MrBloopBot(commands.Bot):
         self.scheduler.start()
 
         await self.change_presence(
-            activity=discord.Activity(type=discord.ActivityType.watching, name="Hello 🎂")
+            activity=discord.Activity(type=discord.ActivityType.watching, name="Hello 👋🏼")
         )
 
     async def on_guild_join(self, guild: discord.Guild) -> None:
@@ -68,8 +68,6 @@ class MrBloopBot(commands.Bot):
     @commands.command(name="sync")
     @commands.is_owner()
     async def sync(self, ctx: commands.Context) -> None:
-        self.tree.clear_commands(guild=None)
-        await self.tree.sync()
-        self.tree.clear_commands(guild=discord.Object(id=ctx.guild.id))
-        await self.tree.sync(guild=discord.Object(id=ctx.guild.id))
-        await ctx.send("✅ Commands cleared and resynced!")
+        self.tree.copy_global_to(guild=ctx.guild)
+        synced = await self.tree.sync(guild=ctx.guild)
+        await ctx.send(f"✅ {len(synced)} commands synced to this server!")

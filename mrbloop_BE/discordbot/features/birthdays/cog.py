@@ -115,3 +115,4 @@ class BirthdayCog(commands.GroupCog, name="birthday"):
             await interaction.response.send_message(
                 "❌ You need **Manage Server** permissions to use this command.", ephemeral=True
             )
+            
