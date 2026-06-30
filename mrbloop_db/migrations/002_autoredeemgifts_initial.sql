@@ -1,6 +1,6 @@
 -- ============================================================
--- Migration 002: autoredeemgifts schema – initiële tabellen
--- Voer uit als root:
+-- Migration 002: autoredeemgifts schema – initial tables
+-- Run as root:
 --   mysql -u root -p < migrations/002_autoredeemgifts_initial.sql
 -- ============================================================
 

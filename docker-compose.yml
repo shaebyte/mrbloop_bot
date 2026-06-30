@@ -3,16 +3,17 @@ services:
   # ─── Database ────────────────────────────────────────────────────────────────
   mysql:
     image: mysql:8.0
+    container_name: mrbloop_mysql
     env_file:
       - ./db.env
     volumes:
-      # Init-scripts worden alfabetisch uitgevoerd bij het eerste opstarten
+      # Init scripts are executed alphabetically on first startup
       - ./mrbloop_db/migrations:/docker-entrypoint-initdb.d:ro
-      # Persistente opslag: data blijft behouden bij container restarts/rebuilds
+      # Persistent storage: data is preserved across container restarts/rebuilds
       - mysql_data:/var/lib/mysql
     ports:
-      # Optioneel: verwijder deze regel als je geen directe toegang via MySQL Workbench nodig hebt
-      - "3306:3306"
+      # Optional: remove this line if you don't need direct access via MySQL Workbench
+      - "3307:3306"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
       interval: 5s

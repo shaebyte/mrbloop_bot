@@ -1,7 +1,7 @@
 """
 mrbloop_BE – entrypoint
 
-Gebruik:
+Usage:
     cd mrbloop_BE
     python main.py
 """

@@ -68,4 +68,4 @@ class BirthdayService:
         )
         embed.set_thumbnail(url=member.display_avatar.url)
         embed.set_footer(text=f"🎈 Hope you have a great day, {member.display_name}!")
-        await channel.send(content=f"🎊 Happy Birthday {member.mention}! 🎊", embed=embed)
+        await channel.send(content=f"@everyone 🎊 Happy Birthday {member.mention}! 🎊", embed=embed)

@@ -1,5 +1,5 @@
 """
-Bot – centrale klasse die alles samenhoudt.
+Bot – central class that holds everything together.
 """
 
 import logging

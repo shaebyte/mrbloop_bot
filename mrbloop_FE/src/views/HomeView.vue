@@ -202,7 +202,7 @@ async function copyCode(code) {
 
             <!-- Blacklisted message -->
             <v-row v-if="isBlacklisted" no-gutters align="center" class="mt-10">
-              <!-- Linker kolom: Image -->
+              <!-- Left column: Image -->
               <v-col cols="3">
                 <v-img
                   :src="mrbloopImg"
@@ -212,7 +212,7 @@ async function copyCode(code) {
                 />
               </v-col>
 
-              <!-- Rechter kolom: Tekst -->
+              <!-- Right column: Text -->
               <v-col cols="9" class="d-flex flex-column">
                 <span class="subtext text-left d-block" style="color: #18a4ff;">
                   Well well, looks like you've been granted exclusive access to our elite club: Exclusion.
@@ -407,7 +407,7 @@ async function copyCode(code) {
 }
 
 .highlight-name {
-  color: #fc3dab; /* Vervang dit door jouw gewenste kleur (bijv. 'red', 'blue', of een hex-code) */
-  font-weight: bold; /* Optioneel: maakt de naam ook meteen dikgedrukt */
+  color: #fc3dab; /* Replace this with your desired color (e.g. 'red', 'blue', or a hex code) */
+  font-weight: bold; /* Optional: also makes the name bold right away */
 }
 </style>

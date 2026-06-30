@@ -1,1 +1,1 @@
-# Features package – elke feature: repository / service / cog
+# Features package – each feature: repository / service / cog

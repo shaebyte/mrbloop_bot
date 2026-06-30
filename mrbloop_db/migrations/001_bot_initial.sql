@@ -1,12 +1,12 @@
 -- ============================================================
--- Migration 001: mrbloop_bot schema – initiële tabellen
--- Voer uit als root:
+-- Migration 001: mrbloop_bot schema – initial tables
+-- Run as root:
 --   mysql -u root -p < migrations/001_bot_initial.sql
 -- ============================================================
 
 USE mrbloop_db;
 
--- Servers die de bot gebruiken
+-- Servers that use the bot
 CREATE TABLE IF NOT EXISTS dbot_guilds (
     guild_id            BIGINT UNSIGNED  NOT NULL,
     guild_name          VARCHAR(100)     NOT NULL,
@@ -18,11 +18,11 @@ CREATE TABLE IF NOT EXISTS dbot_guilds (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
--- Verjaardagen
--- Opslag strategie:
---   birth_month + birth_day : alleen dag/maand, geen jaar (privacy)
---   region                  : AMERICAS | EMEA | APAC (bepaalt wanneer de felicitatie verstuurd wordt)
---   last_greeted_year       : voorkomt dubbele felicitaties in hetzelfde jaar
+-- Birthdays
+-- Storage strategy:
+--   birth_month + birth_day : day/month only, no year (privacy)
+--   region                  : AMERICAS | EMEA | APAC (determines when the congratulation is sent)
+--   last_greeted_year       : prevents duplicate congratulations in the same year
 CREATE TABLE IF NOT EXISTS dbot_user_birthdays (
     id                BIGINT UNSIGNED              NOT NULL AUTO_INCREMENT,
     user_id           BIGINT UNSIGNED              NOT NULL,

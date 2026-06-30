@@ -1,19 +1,19 @@
 # mrbloop_db
 
-Bevat alle MySQL schema's en migrations voor het mrbloop platform.
-De database staat bewust buiten de bot zodat meerdere applicaties
-(bot, FE, toekomstige services) dezelfde DB kunnen delen.
+Contains all MySQL schemas and migrations for the mrbloop platform.
+The database is deliberately kept outside the bot so multiple applications
+(bot, FE, future services) can share the same DB.
 
-## Schema's
+## Schemas
 
-| Schema | Beschrijving |
+| Schema | Description |
 |---|---|
-| `mrbloop_bot` | Discord bot data (verjaardagen, events, giftcodes) |
+| `mrbloop_bot` | Discord bot data (birthdays, events, giftcodes) |
 
-## Migrations uitvoeren
+## Running migrations
 
 ```bash
-# Eenmalig: schema aanmaken + user
+# One-time: create schema + user
 mysql -u root -p < migrations/000_setup.sql
 
 # Bot schema

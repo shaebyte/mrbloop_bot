@@ -1,0 +1,28 @@
+
+docker compose up --build
+
+--build makes sure all images are rebuilt. Next time, without code changes, you can omit --build.
+
+
+# View logs of one specific service
+docker compose logs -f discordbot
+docker compose logs -f autoredeemgifts
+docker compose logs -f mysql
+
+# Stop everything (data stays preserved in volume)
+docker compose down
+
+# Stop everything AND wipe the database (fresh start)
+docker compose down -v
+
+# Rebuild only one container after a code change
+docker compose up --build discordbot
+
+# If you also want the data gone:
+docker compose down -v
+
+# The built images always remain (they take up space). Remove those separately:
+docker compose down --rmi all
+
+# Or everything at once (containers + volumes + images):
+docker compose down -v --rmi all

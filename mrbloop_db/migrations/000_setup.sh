@@ -1,6 +1,6 @@
 #!/bin/bash
-# Maakt de bot-database en gebruiker aan.
-# Wachtwoord komt uit db.env (git-ignored) — staat nergens hardcoded in dit bestand.
+# Creates the bot database and user.
+# Password comes from db.env (git-ignored) — never hardcoded in this file.
 set -e
 
 mysql -u root -p"${MYSQL_ROOT_PASSWORD}" <<SQL

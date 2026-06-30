@@ -229,7 +229,7 @@ async function toggleBlacklist(acc) {
 
           <template #item.actions="{ item }">
             <template v-if="editing?.player_id !== item.player_id">
-              <!-- Niet in edit mode: ban/unban + pencil -->
+              <!-- Not in edit mode: ban/unban + pencil -->
               <v-btn
                 :icon="item.blacklisted ? 'mdi-play' : 'mdi-stop'"
                 :color="item.blacklisted ? 'success' : 'error'"
@@ -245,7 +245,7 @@ async function toggleBlacklist(acc) {
               />
             </template>
             <template v-else-if="!isDirty(item)">
-              <!-- Edit mode, niets gewijzigd: ban/unban + cancel -->
+              <!-- Edit mode, nothing changed: ban/unban + cancel -->
               <v-btn
                 :icon="item.blacklisted ? 'mdi-play' : 'mdi-stop'"
                 :color="item.blacklisted ? 'success' : 'error'"
@@ -261,7 +261,7 @@ async function toggleBlacklist(acc) {
               />
             </template>
             <template v-else>
-              <!-- Edit mode + dirty: alleen save + cancel -->
+              <!-- Edit mode + dirty: only save + cancel -->
               <v-btn
                 icon="mdi-content-save"
                 size="small" color="primary" variant="text"

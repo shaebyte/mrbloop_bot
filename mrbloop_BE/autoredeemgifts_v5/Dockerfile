@@ -7,6 +7,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Standaard: start de poller daemon
-# Overschrijf CMD in docker-compose voor de API-service
+# Default: start the poller daemon
+# Override CMD in docker-compose for the API service
 CMD ["python", "run.py"]

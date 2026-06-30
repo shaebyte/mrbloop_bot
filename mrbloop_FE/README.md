@@ -1,8 +1,8 @@
 # mrbloop_FE
 
-Frontend – toekomstig dashboard voor het mrbloop platform.
+Frontend – future dashboard for the mrbloop platform.
 
-Mogelijke inhoud:
-- Verjaardag overzicht per server
-- Giftcode beheer
-- Event kalender
+Possible content:
+- Birthday overview per server
+- Giftcode management
+- Event calendar

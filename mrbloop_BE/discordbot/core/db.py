@@ -1,8 +1,8 @@
 """
-Database connectie module.
+Database connection module.
 
-Beheert de async aiomysql pool. De pool verbindt met het mrbloop_db
-schema in de externe mrbloop_db MySQL instantie.
+Manages the async aiomysql pool. The pool connects to the mrbloop_db
+schema in the external mrbloop_db MySQL instance.
 """
 
 import aiomysql

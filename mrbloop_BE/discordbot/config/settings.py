@@ -2,10 +2,18 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Gedeelde DB-credentials uit de root db.env
-_root = Path(__file__).resolve().parents[3]
-load_dotenv(_root / "db.env")
-# Module-specifieke overrides (.env naast main.py)
+def _find_repo_root(start: Path, marker: str = "db.env") -> Path | None:
+    for directory in (start, *start.parents):
+        if (directory / marker).exists():
+            return directory
+    return None
+
+# Shared DB credentials from the root db.env (only relevant outside Docker;
+# in Docker, docker-compose's env_file already sets these as real env vars)
+_root = _find_repo_root(Path(__file__).resolve().parent)
+if _root:
+    load_dotenv(_root / "db.env")
+# Module-specific overrides (.env next to main.py)
 load_dotenv()
 
 

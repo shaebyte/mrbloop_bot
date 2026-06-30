@@ -3,9 +3,18 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-# Gedeelde DB-credentials uit de root db.env
-_root = Path(__file__).resolve().parents[3]
-load_dotenv(_root / "db.env")
+
+def _find_repo_root(start: Path, marker: str = "db.env") -> Path | None:
+    for directory in (start, *start.parents):
+        if (directory / marker).exists():
+            return directory
+    return None
+
+# Shared DB credentials from the root db.env (only relevant outside Docker;
+# in Docker, docker-compose's env_file already sets these as real env vars)
+_root = _find_repo_root(BASE_DIR)
+if _root:
+    load_dotenv(_root / "db.env")
 load_dotenv(BASE_DIR / '.env')
 
 _env = os.environ.get('APP_ENV', '').strip()
@@ -23,17 +32,17 @@ def _require(key: str) -> str:
 def _optional(key: str, default: str) -> str:
     return os.environ.get(key, default).strip()
 
-# Verplichte variabelen
+# Required variables
 GIFT_CODE_API   = _require('GIFT_CODE_API')
 REDEEM_SECRET   = _require('REDEEM_SECRET')
 JWT_SECRET      = _require('JWT_SECRET')
 MOD_PASSWORD    = _require('MOD_PASSWORD')
 
-# Optionele variabelen met fallback
+# Optional variables with fallback
 REDEEM_API      = _optional('REDEEM_API', 'https://kingshot-giftcode.centurygame.com/api')
 ALLOWED_ORIGINS = _optional('ALLOWED_ORIGINS', 'http://localhost:5173').split(',')
 
-# MySQL verbindingsinstellingen
+# MySQL connection settings
 DB_HOST     = _optional('DB_HOST', 'localhost')
 DB_PORT     = int(_optional('DB_PORT', '3306'))
 DB_USER     = _require('DB_USER')

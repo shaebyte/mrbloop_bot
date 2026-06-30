@@ -1,4 +1,4 @@
-CREATE USER 'newuser'@'%' IDENTIFIED BY 'SterkWachtwoord123!';
+CREATE USER 'newuser'@'%' IDENTIFIED BY 'StrongPassword123!';
 
 SELECT user, host, plugin
 FROM mysql.user

@@ -4,7 +4,7 @@ import { useAuth } from './composables/useAuth'
 import logo from './assets/logo.png'
 
 const router = useRouter()
-const route = useRoute() // We hebben de route nodig om te kijken waar we zijn
+const route = useRoute() // We need the route to check where we are
 const { isMod, logout } = useAuth()
 
 function handleLogout() {
@@ -64,40 +64,40 @@ function handleLogout() {
 </style>
 
 <style scoped>
-/* 1. Basis layout (Mobiel eerst): neem de volledige breedte met een comfortabele padding */
+/* 1. Base layout (mobile first): take the full width with comfortable padding */
 .layout-container,
 .nav-content-container {
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
-  transition: max-width 0.2s ease; /* Zorgt voor een vloeiende overgang bij resizen */
+  transition: max-width 0.2s ease; /* Provides a smooth transition when resizing */
 }
 
-/* 2. Responsive breakpoints voor Normale pagina's (Home & ModLogin) */
+/* 2. Responsive breakpoints for normal pages (Home & ModLogin) */
 @media (min-width: 600px) {
   .layout-container,
   .nav-content-container {
-    max-width: 500px; /* Netjes compact voor mobiel/tablet */
+    max-width: 500px; /* Nicely compact for mobile/tablet */
   }
 }
 
 @media (min-width: 960px) {
   .layout-container,
   .nav-content-container {
-    max-width: 550px; /* Iets breder op desktop, maar blijft een mooie gecentreerde card */
+    max-width: 550px; /* A bit wider on desktop, but stays a nice centered card */
   }
 }
 
-/* 3. Uitzondering voor het Dashboard: Als we op /mod zijn, MAAR NIET op /mod/login */
-/* We gebruiken de dynamic class 'mod-navbar-active' die je al via de route hebt klaargezet */
+/* 3. Exception for the Dashboard: if we're on /mod, BUT NOT on /mod/login */
+/* We use the dynamic class 'mod-navbar-active' already set up via the route */
 .mod-navbar-active .nav-content-container,
 :has(.mod-navbar-active) .layout-container {
-  max-width: 1200px !important; /* Ruime breedte voor de datatables */
+  max-width: 1200px !important; /* Generous width for the datatables */
   padding-left: 24px;
   padding-right: 24px;
 }
 
-/* Extra tweaks voor de home-knop en logo */
+/* Extra tweaks for the home button and logo */
 .home-btn {
   min-width: unset;
   padding: 0 8px;
