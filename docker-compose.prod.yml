@@ -32,16 +32,16 @@ services:
 
   # ─── Database: not more publicly accessible in production ──────────────────────
   mysql:
-    ports: []
+    ports: !reset []
 
   # ─── AutoRedeemGifts API: only internally accessible, nginx-proxy forwards requests ───
   autoredeemgifts:
     command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'
-    ports: []
+    ports: !reset []
 
   # ─── Frontend: nginx-proxy handles 80/443, this container doesn't need to be public ───
   frontend:
-    ports: []
+    ports: !reset []
     environment:
       - VIRTUAL_HOST=mrbloop.com
       - VIRTUAL_PORT=80
