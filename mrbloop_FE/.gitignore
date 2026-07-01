@@ -2,3 +2,7 @@ node_modules/
 .env
 .env.*
 dist/
+
+# Not a secret (just the API base URL) — needed so `vite build` produces
+# a working production bundle when the repo is cloned onto the server.
+!.env.production
