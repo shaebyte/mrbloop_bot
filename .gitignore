@@ -3,10 +3,6 @@
 .env.*
 db.env
 
-# Frontend build-time config is not a secret (just the API base URL) and
-# must be committed so `vite build` produces a working production bundle.
-!mrbloop_FE/.env.production
-
 # Python
 __pycache__/
 *.pyc

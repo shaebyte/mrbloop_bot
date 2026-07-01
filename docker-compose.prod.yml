@@ -46,7 +46,7 @@ services:
       - VIRTUAL_HOST=mrbloop.com
       - VIRTUAL_PORT=80
       - LETSENCRYPT_HOST=mrbloop.com
-      - LETSENCRYPT_EMAIL=sheenalieuw@gmail.com
+      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
 
 volumes:
   certs:
