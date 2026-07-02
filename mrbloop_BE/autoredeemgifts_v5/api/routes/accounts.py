@@ -2,7 +2,7 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 from ..deps import get_db
-from ..auth import require_mod
+from ..auth import require_admin
 from ..limiter import limiter
 from app.redeemer import fetch_player_info
 from app.config import REDEEM_API
@@ -60,7 +60,7 @@ async def get_account(player_id: str, db=Depends(get_db)):
 
 # --- Moderator ---
 
-@router.get("", dependencies=[Depends(require_mod)])
+@router.get("", dependencies=[Depends(require_admin)])
 async def list_accounts(
     db=Depends(get_db),
     page: int = Query(1, ge=1),
@@ -102,7 +102,7 @@ async def list_accounts(
     return {"items": items, "total": total}
 
 
-@router.put("/{player_id}", dependencies=[Depends(require_mod)])
+@router.put("/{player_id}", dependencies=[Depends(require_admin)])
 async def update_account(player_id: str, body: AccountUpdate, db=Depends(get_db)):
     fields = {k: v for k, v in body.model_dump(exclude_unset=True).items()}
     if not fields:

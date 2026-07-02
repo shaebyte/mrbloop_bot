@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, Query
 from ..deps import get_db
-from ..auth import require_mod
+from ..auth import require_admin
 
 router = APIRouter(
     prefix="/redeem-attempts",
     tags=["redeem"],
-    dependencies=[Depends(require_mod)],
+    dependencies=[Depends(require_admin)],
 )
 
 

@@ -33,13 +33,28 @@ def _optional(key: str, default: str) -> str:
     return os.environ.get(key, default).strip()
 
 # Required variables
-GIFT_CODE_API   = _require('GIFT_CODE_API')
 REDEEM_SECRET   = _require('REDEEM_SECRET')
 JWT_SECRET      = _require('JWT_SECRET')
 
 # Optional variables with fallback
 REDEEM_API      = _optional('REDEEM_API', 'https://kingshot-giftcode.centurygame.com/api')
 ALLOWED_ORIGINS = _optional('ALLOWED_ORIGINS', 'http://localhost:5173').split(',')
+
+# OCR & name matching
+OCR_MIN_CONFIDENCE    = float(_optional('OCR_MIN_CONFIDENCE', '0.50'))
+OCR_MIN_NAME_LENGTH   = int(_optional('OCR_MIN_NAME_LENGTH', '2'))
+OCR_MAX_NAME_LENGTH   = int(_optional('OCR_MAX_NAME_LENGTH', '30'))
+# UI words on result screens that are never player names
+OCR_IGNORE_WORDS      = {
+    w.strip().casefold()
+    for w in _optional(
+        'OCR_IGNORE_WORDS',
+        'rank,score,points,power,total,damage,kills,victory,defeat,legion,results',
+    ).split(',')
+    if w.strip()
+}
+STRIP_ALLIANCE_TAG    = _optional('STRIP_ALLIANCE_TAG', 'true').lower() == 'true'
+FUZZY_MATCH_THRESHOLD = int(_optional('FUZZY_MATCH_THRESHOLD', '85'))
 
 # MySQL connection settings
 DB_HOST     = _optional('DB_HOST', 'localhost')

@@ -15,7 +15,6 @@ from slowapi.errors import RateLimitExceeded
 from .limiter import limiter
 from app.config import ALLOWED_ORIGINS
 from app.poller import run_poller
-from .auth import router as auth_router
 from .routes.accounts import router as accounts_router
 from .routes.gift_codes import router as codes_router
 from .routes.redeem_attempts import router as redeem_router
@@ -47,7 +46,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth_router, prefix="/auth")
 app.include_router(accounts_router)
 app.include_router(codes_router)
 app.include_router(redeem_router)

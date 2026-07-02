@@ -47,6 +47,32 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # ─── Alliance Management: member/attendance API (OCR) ───────────────────────
+  alliancemanagement:
+    build: ./mrbloop_BE/alliancemanagement
+    env_file:
+      - ./db.env
+      - ./mrbloop_BE/alliancemanagement/.env
+    ports:
+      - "8010:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── Auth Service: shared login + user/role management ──────────────────────
+  authservice:
+    build: ./mrbloop_BE/authservice
+    env_file:
+      - ./db.env
+      - ./mrbloop_BE/authservice/.env
+    ports:
+      - "8020:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
   # ─── Frontend + Nginx ────────────────────────────────────────────────────────
   frontend:
     build: ./mrbloop_FE
@@ -54,6 +80,8 @@ services:
       - "80:80"
     depends_on:
       - autoredeemgifts
+      - alliancemanagement
+      - authservice
     restart: unless-stopped
 
 volumes:

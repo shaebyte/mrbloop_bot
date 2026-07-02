@@ -10,8 +10,9 @@ def _find_repo_root(start: Path, marker: str = "db.env") -> Path | None:
             return directory
     return None
 
-# Shared DB credentials from the root db.env (only relevant outside Docker;
-# in Docker, docker-compose's env_file already sets these as real env vars)
+# Shared DB credentials + JWT_SECRET from the root db.env (only relevant
+# outside Docker; in Docker, docker-compose's env_file already sets these as
+# real env vars)
 _root = _find_repo_root(BASE_DIR)
 if _root:
     load_dotenv(_root / "db.env")
@@ -33,12 +34,10 @@ def _optional(key: str, default: str) -> str:
     return os.environ.get(key, default).strip()
 
 # Required variables
-GIFT_CODE_API   = _require('GIFT_CODE_API')
-REDEEM_SECRET   = _require('REDEEM_SECRET')
-JWT_SECRET      = _require('JWT_SECRET')
+JWT_SECRET = _require('JWT_SECRET')
 
 # Optional variables with fallback
-REDEEM_API      = _optional('REDEEM_API', 'https://kingshot-giftcode.centurygame.com/api')
+JWT_TTL_HOURS   = int(_optional('JWT_TTL_HOURS', '8'))
 ALLOWED_ORIGINS = _optional('ALLOWED_ORIGINS', 'http://localhost:5173').split(',')
 
 # MySQL connection settings

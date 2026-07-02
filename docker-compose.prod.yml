@@ -39,6 +39,16 @@ services:
     command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'
     ports: !reset []
 
+  # ─── Alliance Management API: only internally accessible ────────────────────
+  alliancemanagement:
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'
+    ports: !reset []
+
+  # ─── Auth Service: only internally accessible ────────────────────────────────
+  authservice:
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'
+    ports: !reset []
+
   # ─── Frontend: nginx-proxy handles 80/443, this container doesn't need to be public ───
   frontend:
     ports: !reset []

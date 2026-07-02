@@ -5,7 +5,7 @@ import logo from './assets/logo.png'
 
 const router = useRouter()
 const route = useRoute() // We need the route to check where we are
-const { isMod, logout } = useAuth()
+const { isAuthed, isAdmin, isAlliance, logout } = useAuth()
 
 function handleLogout() {
   logout()
@@ -18,7 +18,7 @@ function handleLogout() {
     <v-app-bar 
       density="comfortable" 
       elevation="3"
-      :class="{ 'mod-navbar-active': route.path.startsWith('/mod') && route.path !== '/mod/login' }"
+      :class="{ 'mod-navbar-active': route.path === '/mod' || route.path === '/alliance' }"
     >
       <div class="nav-content-container d-flex align-center w-100 px-4">
         
@@ -31,15 +31,19 @@ function handleLogout() {
         </div>
 
         <div class="d-flex justify-end ga-2 flex-1-1-0">
-          <v-btn v-if="isMod" to="/mod" icon size="small" color="pink-lighten-1" class="btn"> 
+          <v-btn v-if="isAdmin" to="/mod" icon size="small" color="pink-lighten-1" class="btn">
             <v-icon size="small">mdi-cog</v-icon>
           </v-btn>
-          
-          <v-btn v-if="!isMod" to="/mod/login" icon size="small" class="btn">
+
+          <v-btn v-if="isAdmin || isAlliance" to="/alliance" icon size="small" color="blue-lighten-1" class="btn">
+            <v-icon size="small">mdi-shield-account</v-icon>
+          </v-btn>
+
+          <v-btn v-if="!isAuthed" to="/login" icon size="small" class="btn">
             <v-icon size="small">mdi-login</v-icon>
           </v-btn>
-          
-          <v-btn v-if="isMod" icon size="small" @click="handleLogout" class="btn">
+
+          <v-btn v-if="isAuthed" icon size="small" @click="handleLogout" class="btn">
             <v-icon size="small">mdi-logout</v-icon>
           </v-btn>
         </div>
