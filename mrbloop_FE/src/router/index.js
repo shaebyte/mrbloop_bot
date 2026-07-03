@@ -9,7 +9,7 @@ const router = createRouter({
     { path: '/login', component: () => import('../views/LoginView.vue') },
     {
       path: '/mod',
-      component: () => import('../views/ModDashboard.vue'),
+      component: () => import('../views/GiftDashboard.vue'),
       beforeEnter: () => {
         const { isAuthed, isAdmin } = useAuth()
         if (!isAuthed.value) return '/login'

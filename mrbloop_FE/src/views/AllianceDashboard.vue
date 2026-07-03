@@ -1,26 +1,44 @@
 <script setup>
+import { ref } from 'vue'
+import MembersPage from '../pages/MembersPage.vue'
+import AttendancePage from '../pages/AttendancePage.vue'
+import EventsPage from '../pages/EventsPage.vue'
+import StatsPage from '../pages/StatsPage.vue'
+
+const activeTab = ref('attendance')
 </script>
 
 <template>
-  <v-container>
-    <v-row justify="center" class="pt-4">
-      <v-col>
-        <v-card rounded="xl" elevation="3">
-          <v-card-text class="pl-10 pr-10 py-8 text-center">
-            <h2 class="headline_two mb-2">Alliance Management</h2>
-            <p class="text-medium-emphasis">Coming soon.</p>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-  </v-container>
-</template>
+  <v-tabs v-model="activeTab" color="blue-lighten-1">
+    <v-tab value="attendance">
+      <v-icon>mdi-camera</v-icon>
+    </v-tab>
+    <v-tab value="events">
+      <v-icon>mdi-calendar</v-icon>
+    </v-tab>
+    <v-tab value="members">
+      <v-icon>mdi-account-group</v-icon>
+    </v-tab>
+    <v-tab value="stats">
+      <v-icon>mdi-chart-bar</v-icon>
+    </v-tab>
+  </v-tabs>
 
-<style scoped>
-.headline_two {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 32px;
-  letter-spacing: 2px;
-  line-height: 1;
-}
-</style>
+  <v-tabs-window v-model="activeTab">
+    <v-tabs-window-item value="attendance">
+      <AttendancePage />
+    </v-tabs-window-item>
+
+    <v-tabs-window-item value="events">
+      <EventsPage />
+    </v-tabs-window-item>
+
+    <v-tabs-window-item value="members">
+      <MembersPage />
+    </v-tabs-window-item>
+
+    <v-tabs-window-item value="stats">
+      <StatsPage />
+    </v-tabs-window-item>
+  </v-tabs-window>
+</template>
