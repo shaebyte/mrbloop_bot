@@ -13,6 +13,9 @@ services:
       - vhost:/etc/nginx/vhost.d
       - html:/usr/share/nginx/html
       - /var/run/docker.sock:/tmp/docker.sock:ro
+      # Per-vhost override: docker-gen has no CLIENT_MAX_BODY_SIZE env var, only
+      # a file at vhost.d/<VIRTUAL_HOST>, mounted after the named volume so it wins.
+      - ./deploy/nginx-proxy/vhost.d/mrbloop.com:/etc/nginx/vhost.d/mrbloop.com:ro
 
   # ─── Asks and updates Let's Encrypt certificates automatically ───────────────
   acme-companion:
@@ -57,7 +60,6 @@ services:
       - VIRTUAL_PORT=80
       - LETSENCRYPT_HOST=mrbloop.com
       - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
-      - CLIENT_MAX_BODY_SIZE=25m
 
 volumes:
   certs:
