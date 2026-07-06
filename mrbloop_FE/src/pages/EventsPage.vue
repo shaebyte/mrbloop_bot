@@ -11,12 +11,12 @@ const filterEventType = ref(null)
 const filterLegion = ref(null)
 
 const headers = [
-  { title: 'Date', key: 'event_date', width: '110px' },
-  { title: 'Type', key: 'event_type', width: '160px' },
-  { title: 'Legion', key: 'legion', width: '100px' },
-  { title: 'Attended', key: 'total_attendees', width: '110px' },
-  { title: 'Listed', key: 'listed_attendees', width: '100px' },
-  { title: '', key: 'actions', width: '60px', sortable: false },
+  { title: 'Date', key: 'event_date', width: '100px' },
+  { title: 'Type', key: 'event_type', width: '140px' },
+  { title: 'Legion', key: 'legion', width: '80px' },
+  { title: 'Attended', key: 'total_attendees', width: '80px' },
+  { title: 'Listed', key: 'listed_attendees', width: '80px' },
+  { title: '', key: 'actions', width: '100px', sortable: false },
 ]
 
 const detail = ref(null)
@@ -60,6 +60,11 @@ async function deleteEvent(event) {
   events.value = events.value.filter((e) => e.event_id !== event.event_id)
 }
 
+function syncListedAttendees(eventId, count) {
+  const row = events.value.find((e) => e.event_id === eventId)
+  if (row) row.listed_attendees = count
+}
+
 async function addAttendee() {
   errorMsg.value = ''
   const playerId = addAlias.value
@@ -68,6 +73,7 @@ async function addAttendee() {
     await api.post(`/events/${detail.value.event_id}/attendance`, { player_id: playerId })
     addAlias.value = null
     await openEvent(detail.value)
+    syncListedAttendees(detail.value.event_id, detail.value.attendees?.length ?? 0)
   } catch (err) {
     errorMsg.value = err.response?.data?.detail ?? 'Could not add attendee'
   }
@@ -76,6 +82,7 @@ async function addAttendee() {
 async function removeAttendee(playerId) {
   await api.delete(`/events/${detail.value.event_id}/attendance/${playerId}`)
   await openEvent(detail.value)
+  syncListedAttendees(detail.value.event_id, detail.value.attendees?.length ?? 0)
 }
 
 onMounted(fetchEvents)
@@ -132,10 +139,11 @@ defineExpose({ fetchEvents })
 
     <v-dialog v-model="detailOpen" max-width="520">
       <v-card v-if="detail">
-        <v-card-title class="mt-3 ml-2">{{ detail.event_type }} • {{ detail.legion }} • {{ detail.event_date }}</v-card-title>
-        <v-card-subtitle class="ml-2 text-grey">Attended players: {{ detail.total_attendees }}</v-card-subtitle>
+        <v-card-title class="mt-3 ml-2">{{ detail.event_type }} • {{ detail.legion }}</v-card-title>
+        <v-card-subtitle class="ml-2 text-grey mb-1">Date: {{ detail.event_date }}</v-card-subtitle>
+        <v-card-subtitle class="ml-2 text-grey">Players: {{ detail.attendees?.length ?? 0 }} listed / {{ detail.total_attendees }} reported</v-card-subtitle>
         <v-card-text>
-          <div class="d-flex ga-2 mb-8">
+          <div class="d-flex ga-2 mb-6">
             <v-autocomplete
               v-model="addAlias"
               :items="members"
@@ -150,13 +158,12 @@ defineExpose({ fetchEvents })
             <v-btn color="blue-darken-2" @click="addAttendee">Add</v-btn>
           </div>
 
-          <p class="mb-0 ml-1 text-grey" style="font-size: 0.875rem">Listed players: {{ detail.attendees?.length ?? 0 }}</p>
           <v-list density="compact" style="max-height: 320px; overflow-y: auto">
             <v-list-item v-for="a in detail.attendees" :key="a.player_id">
               <template #append>
                 <v-btn icon="mdi-close" size="x-small" variant="text" @click="removeAttendee(a.player_id)" />
               </template>
-              {{ a.alias ?? a.player_id }} ({{ a.player_id }})
+              {{ a.alias ?? a.player_id }}
             </v-list-item>
             <v-list-item v-if="!detail.attendees?.length">No attendees yet.</v-list-item>
           </v-list>
@@ -169,5 +176,19 @@ defineExpose({ fetchEvents })
 <style scoped>
 .bloop-blue {
   color: #18a4ff;
+}
+
+:deep(.v-data-table th) {
+  text-align: left;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+}
+
+:deep(.v-data-table td) {
+  padding: 4px 12px;
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.06);
 }
 </style>

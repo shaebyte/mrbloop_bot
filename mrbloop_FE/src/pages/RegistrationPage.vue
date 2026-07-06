@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
-import AttendancePage from './AttendancePage.vue'
-import MemberpowerPage from './MemberpowerPage.vue'
+import AttendancePageV2 from './AttendancePageV2.vue'
+import MemberpowerPageV2 from './MemberpowerPageV2.vue'
 import AboutRegistration from '../components/AboutRegistration.vue'
 
 const activeSubTab = ref('attendance')
@@ -35,11 +35,11 @@ const infoDialog = ref(false)
 
       <v-tabs-window v-model="activeSubTab">
         <v-tabs-window-item value="attendance">
-          <AttendancePage />
+          <AttendancePageV2 />
         </v-tabs-window-item>
 
         <v-tabs-window-item value="member-power">
-          <MemberpowerPage />
+          <MemberpowerPageV2 />
         </v-tabs-window-item>
       </v-tabs-window>
     </template>

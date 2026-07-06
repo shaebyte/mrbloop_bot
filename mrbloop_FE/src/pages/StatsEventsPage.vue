@@ -128,4 +128,18 @@ defineExpose({ fetchMatrix })
 .bloop-blue {
   color: #18a4ff;
 }
+
+:deep(.v-data-table th) {
+  text-align: left;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+}
+
+:deep(.v-data-table td) {
+  padding: 4px 12px;
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.06);
+}
 </style>

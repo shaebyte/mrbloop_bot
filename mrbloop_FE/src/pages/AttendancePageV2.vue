@@ -37,10 +37,27 @@ const loading = ref(false)
 const errorMsg = ref('')
 const preview = ref(null)
 const confirmResult = ref(null)
+const showUnmatchedLines = ref(false)
 
-// player_id -> included in submission
+// player_id -> included in submission (present list)
 const included = ref({})
-const includedCount = computed(() => Object.values(included.value).filter(Boolean).length)
+// player_id -> manually marked present despite no OCR match (absent list)
+const manualPresent = ref({})
+
+const includedCount = computed(
+  () => Object.values(included.value).filter(Boolean).length +
+    Object.values(manualPresent.value).filter(Boolean).length
+)
+
+const presentRows = computed(() => {
+  if (!preview.value) return []
+  return [...preview.value.matched].sort((a, b) => (a.alias ?? '').localeCompare(b.alias ?? ''))
+})
+
+const absentRows = computed(() => {
+  if (!preview.value) return []
+  return [...preview.value.members_not_found].sort((a, b) => (a.alias ?? '').localeCompare(b.alias ?? ''))
+})
 
 async function runPreview() {
   errorMsg.value = ''
@@ -84,6 +101,7 @@ async function doPreview() {
     })
     preview.value = data
     included.value = Object.fromEntries(data.matched.map((m) => [m.player_id, true]))
+    manualPresent.value = {}
   } catch (err) {
     errorMsg.value = err.response?.data?.detail ?? 'Preview failed'
   } finally {
@@ -93,9 +111,14 @@ async function doPreview() {
 
 async function confirm() {
   errorMsg.value = ''
-  const entries = preview.value.matched
-    .filter((m) => included.value[m.player_id])
-    .map((m) => ({ player_id: m.player_id, matched_by_name: m.matched_by_name }))
+  const entries = [
+    ...preview.value.matched
+      .filter((m) => included.value[m.player_id])
+      .map((m) => ({ player_id: m.player_id, matched_by_name: m.matched_by_name })),
+    ...preview.value.members_not_found
+      .filter((m) => manualPresent.value[m.player_id])
+      .map((m) => ({ player_id: m.player_id, matched_by_name: null })),
+  ]
 
   if (!entries.length) {
     errorMsg.value = 'No members selected'
@@ -203,31 +226,90 @@ function reset() {
         />
       </div>
 
-      <!-- REVIEW MATCHED NAMES -->
+      <!-- REVIEW: present / absent tables -->
       <div v-else-if="preview">
-        <div class="d-flex ga-4 mt-3">
-          <div style="flex: 1 1 0; min-width: 0">
-            <p class="text-subtitle-2 mb-1 ml-4 text-info">Unmatched lines ({{ preview.unmatched_lines?.length ?? 0 }})</p>
-            <v-list density="compact">
-              <v-list-item v-for="(line, i) in preview.unmatched_lines" :key="i">
-                {{ line }}
-              </v-list-item>
-            </v-list>
+        <div class="d-flex ga-4 mt-3 flex-wrap align-start">
+          <div style="flex: 1 1 320px; min-width: 0">
+            <v-btn
+              variant="text"
+              size="small"
+              :color="showUnmatchedLines ? 'blue-darken-1' : 'info'"
+              @click="showUnmatchedLines = !showUnmatchedLines"
+            >
+              Unrecognized OCR rows ({{ preview.unmatched_lines?.length ?? 0 }})
+              <v-icon end>{{ showUnmatchedLines ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+            </v-btn>
+            <v-expand-transition>
+              <v-list v-if="showUnmatchedLines" density="compact" class="mb-2">
+                <v-list-item v-for="(line, i) in preview.unmatched_lines" :key="i">
+                  {{ line }}
+                </v-list-item>
+              </v-list>
+            </v-expand-transition>
           </div>
-          <div style="flex: 1 1 0; min-width: 0">
-            <p class="text-subtitle-2 mb-1 ml-5 text-success">Matched players ({{ includedCount }})</p>
-            <p class="text-caption text-grey-darken-1 mb-1 ml-5">Double check the player matching, values may not always be true!</p>
-            <v-alert v-if="preview.total_attendees - includedCount !== 0" type="warning" density="compact" variant="tonal" closable class="ma-3">
-              {{ preview.total_attendees - includedCount }} attendees not matched
+
+          <div style="flex: 1 1 320px; min-width: 0">
+            <v-alert
+              v-if="preview.total_attendees - includedCount !== 0"
+              type="warning" density="compact" variant="tonal" closable
+            >
+              {{ preview.total_attendees - includedCount }} attendees not matched ({{ includedCount }} matched /{{ preview.total_attendees }} reported)
             </v-alert>
-            <v-list density="compact">
-              <v-list-item v-for="m in preview.matched" :key="m.player_id">
-                <template #prepend>
-                  <v-checkbox-btn v-model="included[m.player_id]" />
-                </template>
-                {{ m.alias ?? m.player_id }} ({{ m.player_id }}) — OCR: "{{ m.matched_by_name }}"
-              </v-list-item>
-            </v-list>
+          </div>
+        </div>
+
+        <div class="d-flex ga-4 mt-3 flex-wrap">
+          <div style="flex: 1 1 320px; min-width: 0">
+            <p class="text-subtitle-2 mb-1 ml-1 text-success">Matched players ({{ presentRows.length }})</p>
+            <p class="text-caption text-grey mb-1 ml-1">Double check the matching, values may not always be true!</p>
+            <div style="overflow-x: auto;">
+              <table class="attendance-table mt-2">
+                <thead>
+                  <tr>
+                    <th>Alias</th>
+                    <th>Matched by</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="m in presentRows" :key="m.player_id">
+                    <td class="alias-cell">{{ m.alias ?? m.player_id }}</td>
+                    <td class="match-cell">
+                      <div class="match-cell-content">
+                        <v-checkbox-btn v-model="included[m.player_id]" class="flex-grow-0" />
+                        <span class="text-success">{{ m.matched_by_name }}</span>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div style="flex: 1 1 320px; min-width: 0">
+            <p class="text-subtitle-2 mb-1 ml-1 text-grey-darken-1">Absent ({{ absentRows.length }})</p>
+            <p class="text-caption text-grey-darken-1 mb-1 ml-1">Recognize a player that wasn't matched? Check them off.</p>
+            <div style="overflow-x: auto;">
+              <table class="attendance-table mt-2">
+                <thead>
+                  <tr>
+                    <th>Alias</th>
+                    <th>Ingame name</th>
+                    <th>Present?</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="m in absentRows" :key="m.player_id">
+                    <td class="alias-cell">{{ m.alias ?? m.player_id }}</td>
+                    <td class="ingame-name-cell">{{ m.ingame_name }}</td>
+                    <td class="match-cell">
+                      <div class="match-cell-content">
+                        <v-checkbox-btn v-model="manualPresent[m.player_id]" class="flex-grow-0" />
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -236,7 +318,7 @@ function reset() {
           <v-btn variant="text" @click="reset">Cancel</v-btn>
           <v-btn color="#18a4ff" :loading="loading" @click="confirm">
             <v-icon start>mdi-check</v-icon>
-            Confirm
+            Confirm ({{ includedCount }})
           </v-btn>
         </div>
 
@@ -271,5 +353,44 @@ function reset() {
 <style scoped>
 .bloop-blue {
   color: #18a4ff;
+}
+
+.attendance-table {
+  width: 100%;
+  min-width: 320px;
+  border-collapse: collapse;
+}
+
+.attendance-table th {
+  text-align: left;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+}
+
+.attendance-table td {
+  padding: 4px 12px;
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.06);
+}
+
+.alias-cell {
+  white-space: nowrap;
+}
+
+.ingame-name-cell {
+  white-space: nowrap;
+  color: rgba(var(--v-theme-on-surface), 0.5);
+}
+
+.match-cell {
+  font-size: 0.85rem;
+}
+
+.match-cell-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 </style>

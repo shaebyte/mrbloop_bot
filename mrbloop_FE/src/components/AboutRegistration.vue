@@ -5,7 +5,7 @@
   <v-card-title class="bloop-pink mt-3 ml-2">About Registration</v-card-title>
   <v-card-text>
     <p class="text-medium-emphasis">
-      Registration uses OCR (Optical Character Recognition), a technology that converts screenshot
+      Registration uses Optical Character Recognition - OCR, a technology that converts screenshot
       images into digital text so player names can be matched automatically.
     </p>
 
@@ -26,39 +26,37 @@
     <v-divider class="my-4" />
 
     <div class="d-flex align-center mb-2">
-      <v-icon class="mr-2 bloop-pink">mdi-clock-outline</v-icon>
+      <v-icon class="mr-2 bloop-pink">mdi-help-circle-outline</v-icon>
       <span class="text-subtitle-1 font-weight-medium">How it works</span>
     </div>
     <ol class="about-steps">
-      <li>Select the event type and legion.</li>
-      <li>Select the date.</li>
-      <li>Enter the maximum number of players for this round.</li>
+      <li>Select the event type, legion, date and enter the maximum number of players.</li>
       <li>Add the screenshots.</li>
       <li>
-        Refresh in-game names for better matching.
+        Refresh in-game names for better matching if the popup appears.
         <span class="d-block text-caption text-medium-emphasis">This update may take a moment.</span>
       </li>
       <li>
         Review the scan.
         <span class="d-block text-caption text-medium-emphasis">"Unmatched lines" are scanned text that didn't match any player in the database.</span>
       </li>
-      <li>Check the matched players</li>
-      <li>(De)select what's correct, then click <strong>Confirm</strong>.</li>
+      <li>Check the matched players.</li>
+      <li>(De)select what's (in)correct.</li>
+      <li>Add remaining players who attended but weren't matched.</li>
+      <li>When done, click <strong>Confirm</strong>. 
+        <span class="d-block text-caption text-medium-emphasis">Event will be created and the players will be included.</span>
+      </li>
     </ol>
 
     <v-divider class="my-4" />
 
     <div class="d-flex align-center mb-2">
-      <v-icon class="mr-2 bloop-pink">mdi-magnify</v-icon>
-      <span class="text-subtitle-1 font-weight-medium">Handling unmatched players</span>
+      <v-icon class="mr-2 bloop-pink">mdi-calendar-check</v-icon>
+      <span class="text-subtitle-1 font-weight-medium">Events</span>
     </div>
-    <ol class="about-steps" start="9">
-      <li>Go to the <strong>Events</strong> tab for an overview of all registered events.</li>
-      <li>
-        Click the eye icon next to an event, then use the dropdown to add players who attended but weren't matched.
-        <span class="d-block text-caption text-medium-emphasis">"Attended players" vs. "listed players" acts as a helpful reminder.</span>
-      </li>
-    </ol>
+    <p class="text-medium-emphasis mb-0">
+      Find an overview of all events in the Calendar section.
+    </p>
 
     <v-divider class="my-4" />
 
@@ -67,7 +65,8 @@
       <span class="text-subtitle-1 font-weight-medium">Statistics</span>
     </div>
     <p class="text-medium-emphasis mb-0">
-      Find an overview of players per event and legion in the Statistics section.
+      Find an overview of players per event and legion in the Statistics section. And their individualpower increase over time.
+      <br> 
     </p>
   </v-card-text>
 </template>
