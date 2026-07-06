@@ -144,11 +144,11 @@ function reset() {
         />
 
         <div class="d-flex ga-3 align-center justify-end mt-1">
-          <v-btn variant="outlined" color="blue-darken-2" @click="openFilePicker">
+          <v-btn variant="outlined" color="blue-darken-1" @click="openFilePicker">
             <v-icon start>mdi-camera</v-icon>
             {{ fileInputLabel }}
           </v-btn>
-          <v-btn color="blue-darken-2" :loading="loading" @click="runPreview">
+          <v-btn color="blue-darken-1" :loading="loading" @click="runPreview">
             <v-icon start>mdi-magnify</v-icon>
             Preview
           </v-btn>

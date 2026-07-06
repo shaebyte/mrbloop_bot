@@ -56,7 +56,7 @@ watch(attStatus, () => {
 <template>
   <v-card flat>
     <template #title>
-      <span class="d-block ml-1 mt-3 mb-3 text-pink-lighten-1">Redemption</span>
+      <span class="d-block ml-1 mt-3 mb-3 text-color">Redemption</span>
     </template>
 
     <template #text>
@@ -75,7 +75,7 @@ watch(attStatus, () => {
           density="compact"
           variant="outlined"
           class="mt-3"
-          color="pink-lighten-1"
+          color="text-color"
         >
           <v-btn value="success">Success</v-btn>
           <v-btn value="failed">Failed</v-btn>
@@ -103,3 +103,9 @@ watch(attStatus, () => {
     </div>
   </v-card>
 </template>
+
+<style scoped>
+.text-color {
+  color: #fc3dab;
+}
+</style>

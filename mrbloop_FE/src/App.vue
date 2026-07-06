@@ -31,11 +31,11 @@ function handleLogout() {
         </div>
 
         <div class="d-flex justify-end ga-2 flex-1-1-0">
-          <v-btn v-if="isAdmin" to="/mod" icon size="small" color="pink-lighten-1" class="btn">
+          <v-btn v-if="isAdmin" to="/mod" icon size="small" color="#fc3dab" class="btn">
             <v-icon size="small">mdi-gift</v-icon>
           </v-btn>
 
-          <v-btn v-if="isAdmin || isAlliance" to="/alliance" icon size="small" color="blue-lighten-1" class="btn">
+          <v-btn v-if="isAdmin || isAlliance" to="/alliance" icon size="small" color="#18a4ff" class="btn">
             <v-icon size="small">mdi-shield-account</v-icon>
           </v-btn>
 

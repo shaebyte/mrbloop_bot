@@ -7,7 +7,7 @@ const activeTab = ref('accounts')
 </script>
 
 <template>
-  <v-tabs v-model="activeTab" color="pink-lighten-1">
+  <v-tabs v-model="activeTab" color="#fc3dab">
     <v-tab value="accounts">
       <v-icon>mdi-account-group</v-icon>
     </v-tab>

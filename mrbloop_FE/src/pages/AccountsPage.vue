@@ -90,7 +90,7 @@ async function toggleBlacklist(acc) {
 <template>
   <v-card flat>
     <template #title>
-      <span class="d-block ml-1 mt-3 mb-3 text-pink-lighten-1">Accounts</span>
+      <span class="d-block ml-1 mt-3 mb-3 text-color">Accounts</span>
     </template>
 
     <v-alert v-if="saveMsg" type="success" density="compact" class="ma-3">
@@ -114,7 +114,7 @@ async function toggleBlacklist(acc) {
           density="compact"
           variant="outlined"
           class="mt-3"
-          color="pink-lighten-1"
+          color="text-color"
         >
           <v-btn value="active">Active</v-btn>
           <v-btn value="banned">Banned</v-btn>
@@ -216,3 +216,9 @@ async function toggleBlacklist(acc) {
     </div>
   </v-card>
 </template>
+
+<style scoped>
+.text-color {
+  color: #fc3dab;
+}
+</style>

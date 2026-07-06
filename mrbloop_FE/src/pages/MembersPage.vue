@@ -165,7 +165,7 @@ defineExpose({ fetchMembers, fetchRefreshStatus })
 <template>
   <v-card flat>
     <template #title>
-      <span class="d-block ml-1 mt-3 mb-3 text-blue-darken-1">Members</span>
+      <span class="d-block ml-1 mt-3 mb-3 bloop-blue">Members</span>
     </template>
     <v-alert v-if="saveMsg" type="success" density="compact" closable class="ma-3" @click:close="saveMsg = ''">{{ saveMsg }}</v-alert>
     <v-alert v-if="errorMsg" type="error" density="compact" closable class="ma-3" @click:close="errorMsg = ''">{{ errorMsg }}</v-alert>
@@ -271,3 +271,9 @@ defineExpose({ fetchMembers, fetchRefreshStatus })
     </v-dialog>
   </v-card>
 </template>
+
+<style scoped>
+.bloop-blue {
+  color: #18a4ff;
+}
+</style>

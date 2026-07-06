@@ -17,7 +17,7 @@ watch(activeSubTab, (tab) => {
 <template>
   <v-card flat>
     <template #title>
-      <span class="d-block ml-1 mt-3 mb-3 text-blue-darken-2">Statistics</span>
+      <span class="d-block ml-1 mt-3 mb-3 bloop-blue">Statistics</span>
     </template>
 
     <template #text>
@@ -38,3 +38,9 @@ watch(activeSubTab, (tab) => {
     </template>
   </v-card>
 </template>
+
+<style scoped>
+.bloop-blue {
+  color: #18a4ff;
+}
+</style>

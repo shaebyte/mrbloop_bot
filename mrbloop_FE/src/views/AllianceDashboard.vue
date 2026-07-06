@@ -17,7 +17,7 @@ watch(activeTab, (tab) => {
 </script>
 
 <template>
-  <v-tabs v-model="activeTab" color="blue-lighten-1">
+  <v-tabs v-model="activeTab" color="blue-darken-1">
     <v-tab value="registration">
       <v-icon>mdi-camera</v-icon>
     </v-tab>
@@ -50,3 +50,9 @@ watch(activeTab, (tab) => {
     </v-tabs-window-item>
   </v-tabs-window>
 </template>
+
+<style scoped>
+.bloop-blue {
+  color: #18a4ff;
+}
+</style>

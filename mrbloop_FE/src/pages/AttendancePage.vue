@@ -182,11 +182,11 @@ function reset() {
         />
 
         <div class="d-flex ga-3 align-center justify-end mt-1">
-          <v-btn variant="outlined" color="blue-darken-2" @click="openFilePicker">
+          <v-btn variant="outlined" color="#18a4ff" @click="openFilePicker">
             <v-icon start>mdi-camera</v-icon>
             {{ fileInputLabel }}
           </v-btn>
-          <v-btn color="blue-darken-2" :loading="loading" @click="runPreview">
+          <v-btn color="blue-darken-1" :loading="loading" @click="runPreview">
             <v-icon start>mdi-magnify</v-icon>
             Preview
           </v-btn>
@@ -234,7 +234,7 @@ function reset() {
         <v-alert v-if="errorMsg" type="error" density="compact" closable class="mt-3" @click:close="errorMsg = ''">{{ errorMsg }}</v-alert>
         <div class="d-flex ga-2 mt-4 justify-end">
           <v-btn variant="text" @click="reset">Cancel</v-btn>
-          <v-btn color="blue-darken-1" :loading="loading" @click="confirm">
+          <v-btn color="#18a4ff" :loading="loading" @click="confirm">
             <v-icon start>mdi-check</v-icon>
             Confirm
           </v-btn>
@@ -254,7 +254,7 @@ function reset() {
         <v-alert v-if="confirmResult.unknown_player_ids?.length" type="error" density="compact" closable class="mb-3">
           Unknown player IDs: {{ confirmResult.unknown_player_ids.join(', ') }}
         </v-alert>
-        <v-btn color="blue-darken-1" @click="reset">New upload</v-btn>
+        <v-btn color="bloop-blue" @click="reset">New upload</v-btn>
       </div>
 
     <NameRefreshDialog
@@ -267,3 +267,9 @@ function reset() {
     />
   </div>
 </template>
+
+<style scoped>
+.bloop-blue {
+  color: #18a4ff;
+}
+</style>

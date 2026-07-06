@@ -123,3 +123,9 @@ defineExpose({ fetchMatrix })
     </div>
   </div>
 </template>
+
+<style scoped>
+.bloop-blue {
+  color: #18a4ff;
+}
+</style>

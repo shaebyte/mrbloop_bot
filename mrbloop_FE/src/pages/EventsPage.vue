@@ -86,7 +86,7 @@ defineExpose({ fetchEvents })
 <template>
   <v-card flat>
     <template #title>
-      <span class="d-block ml-1 mt-3 mb-3 text-blue-darken-2">Events</span>
+      <span class="d-block ml-1 mt-3 mb-3 bloop-blue">Events</span>
     </template>
 
     <v-alert v-if="errorMsg" type="error" density="compact" closable class="ma-3" @click:close="errorMsg = ''">{{ errorMsg }}</v-alert>
@@ -147,7 +147,7 @@ defineExpose({ fetchEvents })
               hide-details
               @keyup.enter="addAttendee"
             />
-            <v-btn color="blue-darken-3" @click="addAttendee">Add</v-btn>
+            <v-btn color="blue-darken-2" @click="addAttendee">Add</v-btn>
           </div>
 
           <p class="mb-0 ml-1 text-grey" style="font-size: 0.875rem">Listed players: {{ detail.attendees?.length ?? 0 }}</p>
@@ -165,3 +165,9 @@ defineExpose({ fetchEvents })
     </v-dialog>
   </v-card>
 </template>
+
+<style scoped>
+.bloop-blue {
+  color: #18a4ff;
+}
+</style>
