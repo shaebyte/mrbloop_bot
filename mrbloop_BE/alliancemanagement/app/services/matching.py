@@ -67,16 +67,17 @@ def filter_candidates(lines: list[dict]) -> list[dict]:
     return out
 
 
-def match_lines(members: list[dict], history_rows: list[dict], lines: list[dict]) -> dict:
-    """members: rows from am_members (player_id, alias, ingame_name).
-    history_rows: rows from am_member_name_history valid on the event date.
-    lines: OCR lines that survived filter_candidates().
+def build_name_lookups(members: list[dict], history_rows: list[dict]) -> tuple[dict, dict]:
+    """Build the (lookup, core_lookup) tables shared by name-matching passes.
 
-    Returns {"matched": [...], "unmatched_lines": [...], "members_not_found": [...]}.
+    lookup: normalized name -> (member, method); current names win over history.
+    core_lookup: ASCII-letters-only core name -> member; ambiguous cores (two
+    different members sharing the same core, e.g. their symbols are the only
+    thing distinguishing them) are dropped since a fallback match must be
+    unambiguous to be trustworthy.
     """
     by_id = {m["player_id"]: m for m in members}
 
-    # normalized name -> (member, method); current names win over history names
     lookup: dict[str, tuple[dict, str]] = {}
     for m in members:
         lookup[normalize(m["ingame_name"])] = (m, "exact")
@@ -88,9 +89,6 @@ def match_lines(members: list[dict], history_rows: list[dict], lines: list[dict]
         if key not in lookup:
             lookup[key] = (member, "history")
 
-    # ASCII-core name -> member; dropped if ambiguous (two different members
-    # share the same core, e.g. their symbols are the only thing distinguishing
-    # them) since a fallback match must be unambiguous to be trustworthy.
     core_lookup: dict[str, dict] = {}
     core_ambiguous: set[str] = set()
 
@@ -112,50 +110,68 @@ def match_lines(members: list[dict], history_rows: list[dict], lines: list[dict]
     for key in core_ambiguous:
         core_lookup.pop(key, None)
 
+    return lookup, core_lookup
+
+
+def best_name_match(
+    text: str, lookup: dict, core_lookup: dict, keys: list[str], core_keys: list[str]
+) -> tuple[dict, str, float] | None:
+    """Resolve a single piece of OCR text to a member, or None if no match clears
+    the fuzzy threshold. Same exact -> exact_core -> fuzzy -> fuzzy_core cascade
+    used by match_lines(), factored out so power_matching can reuse it per-row.
+    """
+    norm = normalize(text)
+    core = normalize_core(text)
+
+    hit = lookup.get(norm)
+    if hit is not None:
+        member, method = hit
+        return member, method, 100.0
+
+    if core and core in core_lookup:
+        return core_lookup[core], "exact_core", 95.0
+
+    if keys:
+        found = process.extractOne(
+            norm, keys, scorer=fuzz.WRatio, score_cutoff=FUZZY_MATCH_THRESHOLD
+        )
+        if found is not None:
+            key, score, _ = found
+            member, _base_method = lookup[key]
+            return member, "fuzzy", float(score)
+
+    if core and core_keys:
+        found = process.extractOne(
+            core, core_keys, scorer=fuzz.WRatio, score_cutoff=FUZZY_MATCH_THRESHOLD
+        )
+        if found is not None:
+            key, score, _ = found
+            return core_lookup[key], "fuzzy_core", float(score)
+
+    return None
+
+
+def match_lines(members: list[dict], history_rows: list[dict], lines: list[dict]) -> dict:
+    """members: rows from am_members (player_id, alias, ingame_name).
+    history_rows: rows from am_member_name_history valid on the event date.
+    lines: OCR lines that survived filter_candidates().
+
+    Returns {"matched": [...], "unmatched_lines": [...], "members_not_found": [...]}.
+    """
+    by_id = {m["player_id"]: m for m in members}
+    lookup, core_lookup = build_name_lookups(members, history_rows)
+
     keys = list(lookup)
     core_keys = list(core_lookup)
     best_per_member: dict[str, dict] = {}  # player_id -> best match so far
     unmatched: list[str] = []
 
     for line in lines:
-        norm = normalize(line["text"])
-        core = normalize_core(line["text"])
-
-        member = None
-        method = None
-        score = None
-
-        hit = lookup.get(norm)
-        if hit is not None:
-            member, method = hit
-            score = 100.0
-        elif core and core in core_lookup:
-            member = core_lookup[core]
-            method = "exact_core"
-            score = 95.0
-        elif keys:
-            found = process.extractOne(
-                norm, keys, scorer=fuzz.WRatio, score_cutoff=FUZZY_MATCH_THRESHOLD
-            )
-            if found is not None:
-                key, score, _ = found
-                member, _base_method = lookup[key]
-                method = "fuzzy"
-                score = float(score)
-
-        if member is None and core and core_keys:
-            found = process.extractOne(
-                core, core_keys, scorer=fuzz.WRatio, score_cutoff=FUZZY_MATCH_THRESHOLD
-            )
-            if found is not None:
-                key, score, _ = found
-                member = core_lookup[key]
-                method = "fuzzy_core"
-                score = float(score)
-
-        if member is None:
+        found = best_name_match(line["text"], lookup, core_lookup, keys, core_keys)
+        if found is None:
             unmatched.append(line["text"].strip())
             continue
+        member, method, score = found
 
         match = {
             "player_id": member["player_id"],

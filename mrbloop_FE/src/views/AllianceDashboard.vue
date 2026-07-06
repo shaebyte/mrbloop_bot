@@ -1,16 +1,16 @@
 <script setup>
 import { ref } from 'vue'
 import MembersPage from '../pages/MembersPage.vue'
-import AttendancePage from '../pages/AttendancePage.vue'
+import RegistrationPage from '../pages/RegistrationPage.vue'
 import EventsPage from '../pages/EventsPage.vue'
 import StatsPage from '../pages/StatsPage.vue'
 
-const activeTab = ref('attendance')
+const activeTab = ref('registration')
 </script>
 
 <template>
   <v-tabs v-model="activeTab" color="blue-lighten-1">
-    <v-tab value="attendance">
+    <v-tab value="registration">
       <v-icon>mdi-camera</v-icon>
     </v-tab>
     <v-tab value="events">
@@ -25,8 +25,8 @@ const activeTab = ref('attendance')
   </v-tabs>
 
   <v-tabs-window v-model="activeTab">
-    <v-tabs-window-item value="attendance">
-      <AttendancePage />
+    <v-tabs-window-item value="registration">
+      <RegistrationPage />
     </v-tabs-window-item>
 
     <v-tabs-window-item value="events">

@@ -19,6 +19,7 @@ MAX_ATTEMPTS = 3
 RETRY_BACKOFF = 5
 RATE_LIMIT_BACKOFF = 60
 INTER_ACCOUNT_DELAY = 3
+COOLDOWN = 3600  # minimum seconds between refresh runs
 
 # Progress of the running/last refresh job.
 # Served as-is by GET /members/refresh-names/status.
@@ -95,10 +96,22 @@ async def _run_refresh(player_ids: list[str]) -> None:
     finally:
         state["running"] = False
         state["finished_at"] = datetime.now()
+        await repository.save_refresh_log(
+            state["finished_at"], state["total"], len(state["changed"])
+        )
         logger.info(
             "Name refresh finished: %d processed, %d changed, %d errors",
             state["processed"], len(state["changed"]), len(state["errors"]),
         )
+
+
+async def seconds_until_ready() -> float:
+    """0 if a refresh may start now, otherwise seconds left on the cooldown."""
+    last = await repository.get_last_refresh()
+    if last is None:
+        return 0
+    elapsed = (datetime.now() - last["finished_at"]).total_seconds()
+    return max(0, COOLDOWN - elapsed)
 
 
 async def start_refresh() -> bool:

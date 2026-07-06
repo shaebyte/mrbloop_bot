@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS am_events (
     event_type ENUM('Tri-Alliance Clash', 'Swordland') NOT NULL,
     legion ENUM('Legion 1', 'Legion 2') NOT NULL,
     event_date DATE NOT NULL,
+    total_attendees INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (event_id),
     INDEX idx_event_lookup (event_type, event_date),
@@ -54,6 +55,30 @@ CREATE TABLE IF NOT EXISTS am_event_attendance (
     INDEX idx_attendance_event_day (event_type, event_date),
     FOREIGN KEY (event_id) REFERENCES am_events(event_id) ON DELETE CASCADE,
     FOREIGN KEY (player_id) REFERENCES am_members(player_id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 5. MEMBER POWER (ONE VALUE PER MEMBER PER DATE, SCREENSHOT-SOURCED)
+CREATE TABLE IF NOT EXISTS am_memberpower (
+    player_id VARCHAR(255) NOT NULL,
+    power_date DATE NOT NULL,
+    power BIGINT NOT NULL,
+    matched_by_name VARCHAR(100) NULL, -- the name the OCR actually read
+    registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (player_id, power_date),
+    INDEX idx_memberpower_date (power_date),
+    FOREIGN KEY (player_id) REFERENCES am_members(player_id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 6. NAME REFRESH LOG (SINGLE ROW, OVERWRITTEN ON EACH RUN)
+-- Tracks when the bulk name-refresh job last completed, so the API can
+-- warn when names are stale and enforce a cooldown between runs
+-- (the Century Game API rate-limits aggressively).
+CREATE TABLE IF NOT EXISTS am_refresh_log (
+    id TINYINT NOT NULL,
+    finished_at TIMESTAMP NOT NULL,
+    total INT NOT NULL,
+    changed_count INT NOT NULL,
+    PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- If am_event_attendance already exists WITHOUT the denormalized columns,

@@ -56,6 +56,13 @@ OCR_IGNORE_WORDS      = {
 STRIP_ALLIANCE_TAG    = _optional('STRIP_ALLIANCE_TAG', 'true').lower() == 'true'
 FUZZY_MATCH_THRESHOLD = int(_optional('FUZZY_MATCH_THRESHOLD', '85'))
 
+# Power screenshot parsing (leaderboard-style: name + power per row)
+# Numbers below this are assumed to be rank/level/other columns, not power.
+OCR_MIN_POWER_VALUE      = int(_optional('OCR_MIN_POWER_VALUE', '1000'))
+# Row-grouping tolerance, as a fraction of the OCR'd line height, for deciding
+# whether two text boxes sit on the same visual row.
+OCR_ROW_Y_TOLERANCE_RATIO = float(_optional('OCR_ROW_Y_TOLERANCE_RATIO', '0.6'))
+
 # MySQL connection settings
 DB_HOST     = _optional('DB_HOST', 'localhost')
 DB_PORT     = int(_optional('DB_PORT', '3306'))

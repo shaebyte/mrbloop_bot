@@ -15,6 +15,7 @@ from app.database import create_pool, close_pool
 from app.api.members import router as members_router
 from app.api.events import router as events_router
 from app.api.attendance import router as attendance_router
+from app.api.power import router as power_router
 from app.api.stats import router as stats_router
 
 
@@ -44,6 +45,7 @@ _auth = [Depends(require_auth)]
 app.include_router(members_router, dependencies=_auth)
 app.include_router(events_router, dependencies=_auth)
 app.include_router(attendance_router, dependencies=_auth)
+app.include_router(power_router, dependencies=_auth)
 app.include_router(stats_router, dependencies=_auth)
 
 

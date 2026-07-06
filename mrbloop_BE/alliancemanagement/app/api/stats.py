@@ -1,6 +1,6 @@
 """Attendance statistics."""
 from collections import Counter
-from datetime import date
+from datetime import date, timedelta
 
 from fastapi import APIRouter, HTTPException
 
@@ -8,6 +8,8 @@ from app import repository
 from app.constants import EVENT_TYPES, LEGIONS
 
 router = APIRouter(prefix="/stats", tags=["stats"])
+
+DEFAULT_POWER_WINDOW_DAYS = 30 * 4
 
 
 @router.get("/attendance")
@@ -45,6 +47,99 @@ async def attendance_stats(
             "alliance_name": alliance_name,
         },
         "members": members,
+    }
+
+
+@router.get("/matrix")
+async def attendance_matrix(
+    event_type: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    alliance_name: str | None = None,
+):
+    """Per member, per (event_type, event_date) session: attended or not, and in which legion.
+
+    Legion is treated as an attribute of a member's participation in a session,
+    not as a separate session — matching the rule that a member can only join
+    one legion per event type per day.
+    """
+    if event_type and event_type not in EVENT_TYPES:
+        raise HTTPException(400, f"event_type must be one of: {', '.join(EVENT_TYPES)}")
+
+    sessions = await repository.event_sessions(event_type, date_from, date_to)
+    records = await repository.attendance_matrix(event_type, date_from, date_to, alliance_name)
+    members = await repository.list_members(alliance_name, None)
+
+    session_keys = [f"{s['event_type']}|{s['event_date']}" for s in sessions]
+    legion_by_member = {}
+    for r in records:
+        key = f"{r['event_type']}|{r['event_date']}"
+        legion_by_member.setdefault(r["player_id"], {})[key] = r["legion"]
+
+    rows = [
+        {
+            "player_id": m["player_id"],
+            "alias": m["alias"],
+            "ingame_name": m["ingame_name"],
+            "alliance_name": m["alliance_name"],
+            "attendance": {
+                key: legion_by_member.get(m["player_id"], {}).get(key)
+                for key in session_keys
+            },
+        }
+        for m in members
+    ]
+
+    return {
+        "sessions": [
+            {"event_type": s["event_type"], "event_date": str(s["event_date"])} for s in sessions
+        ],
+        "members": rows,
+    }
+
+
+@router.get("/power-matrix")
+async def power_matrix(
+    date_from: date | None = None,
+    date_to: date | None = None,
+    alliance_name: str | None = None,
+):
+    """Per member, per recorded power_date: the power value.
+
+    Defaults to the last 4 months when no dates are given.
+    """
+    if not date_from and not date_to:
+        date_to = date.today()
+        date_from = date_to - timedelta(days=DEFAULT_POWER_WINDOW_DAYS)
+
+    dates = await repository.power_dates(date_from, date_to)
+    records = await repository.power_matrix(date_from, date_to, alliance_name)
+    members = await repository.list_members(alliance_name, None)
+
+    date_keys = [str(d["power_date"]) for d in dates]
+    power_by_member: dict[str, dict[str, int]] = {}
+    for r in records:
+        power_by_member.setdefault(r["player_id"], {})[str(r["power_date"])] = r["power"]
+
+    rows = [
+        {
+            "player_id": m["player_id"],
+            "alias": m["alias"],
+            "ingame_name": m["ingame_name"],
+            "alliance_name": m["alliance_name"],
+            "power": {key: power_by_member.get(m["player_id"], {}).get(key) for key in date_keys},
+        }
+        for m in members
+    ]
+
+    return {
+        "dates": date_keys,
+        "filters": {
+            "date_from": str(date_from) if date_from else None,
+            "date_to": str(date_to) if date_to else None,
+            "alliance_name": alliance_name,
+        },
+        "members": rows,
     }
 
 

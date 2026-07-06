@@ -1,16 +1,12 @@
 <script setup>
 import { ref, computed } from 'vue'
 import api from '../api/allianceClient'
-import { EVENT_TYPES, LEGIONS } from '../api/allianceConstants'
 import ScreenshotThumbnails from '../components/ScreenshotThumbnails.vue'
 import NameRefreshDialog from '../components/NameRefreshDialog.vue'
 import { useScreenshotPicker } from '../composables/useScreenshotPicker'
 import { useNameRefreshGuard } from '../composables/useNameRefreshGuard'
 
-const eventType = ref(null)
-const legion = ref(null)
-const eventDate = ref(new Date().toISOString().slice(0, 10))
-const totalAttendees = ref(null)
+const powerDate = ref(new Date().toISOString().slice(0, 10))
 
 const {
   screenshots,
@@ -38,22 +34,16 @@ const errorMsg = ref('')
 const preview = ref(null)
 const confirmResult = ref(null)
 
-// player_id -> included in submission
+// player_id -> included in submission, player_id -> editable power value
 const included = ref({})
+const power = ref({})
 const includedCount = computed(() => Object.values(included.value).filter(Boolean).length)
 
 async function runPreview() {
   errorMsg.value = ''
   confirmResult.value = null
-  if (
-    !eventType.value ||
-    !legion.value ||
-    !eventDate.value ||
-    !screenshots.value.length ||
-    !totalAttendees.value ||
-    Number.isNaN(Number(totalAttendees.value))
-  ) {
-    errorMsg.value = 'Event type, legion, date, total amount of attendees and at least one screenshot are required'
+  if (!powerDate.value || !screenshots.value.length) {
+    errorMsg.value = 'Date and at least one screenshot are required'
     return
   }
 
@@ -71,19 +61,17 @@ async function startRefreshFromDialog() {
 
 async function doPreview() {
   const form = new FormData()
-  form.append('event_type', eventType.value)
-  form.append('legion', legion.value)
-  form.append('event_date', eventDate.value)
-  form.append('total_attendees', totalAttendees.value)
+  form.append('power_date', powerDate.value)
   for (const file of screenshots.value) form.append('screenshots', file)
 
   loading.value = true
   try {
-    const { data } = await api.post('/attendance/preview', form, {
+    const { data } = await api.post('/power/preview', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
     preview.value = data
     included.value = Object.fromEntries(data.matched.map((m) => [m.player_id, true]))
+    power.value = Object.fromEntries(data.matched.map((m) => [m.player_id, m.power]))
   } catch (err) {
     errorMsg.value = err.response?.data?.detail ?? 'Preview failed'
   } finally {
@@ -95,20 +83,25 @@ async function confirm() {
   errorMsg.value = ''
   const entries = preview.value.matched
     .filter((m) => included.value[m.player_id])
-    .map((m) => ({ player_id: m.player_id, matched_by_name: m.matched_by_name }))
+    .map((m) => ({
+      player_id: m.player_id,
+      power: Number(power.value[m.player_id]),
+      matched_by_name: m.matched_by_name,
+    }))
 
   if (!entries.length) {
     errorMsg.value = 'No members selected'
     return
   }
+  if (entries.some((e) => !Number.isFinite(e.power) || e.power <= 0)) {
+    errorMsg.value = 'Every selected member needs a valid power value'
+    return
+  }
 
   loading.value = true
   try {
-    const { data } = await api.post('/attendance/confirm', {
-      event_type: preview.value.event_type,
-      legion: preview.value.legion,
-      event_date: preview.value.event_date,
-      total_attendees: preview.value.total_attendees,
+    const { data } = await api.post('/power/confirm', {
+      power_date: preview.value.power_date,
       entries,
     })
     confirmResult.value = data
@@ -124,48 +117,17 @@ function reset() {
   preview.value = null
   confirmResult.value = null
   resetScreenshots()
-  totalAttendees.value = null
 }
 </script>
 
 <template>
   <div>
     <div class="d-flex ga-3 flex-wrap mt-3">
-        <v-select
-          v-model="eventType"
-          :items="EVENT_TYPES"
-          label="Event type"
-          variant="outlined"
-          clearable
-          :disabled="!!preview || !!confirmResult"
-          style="flex: 1 1 0; min-width: 160px"
-        />
-        <v-select
-          v-model="legion"
-          :items="LEGIONS"
-          label="Legion"
-          variant="outlined"
-          clearable
-          :disabled="!!preview || !!confirmResult"
-          style="flex: 1 1 0; min-width: 160px"
-        />
         <v-text-field
-          v-model="eventDate"
+          v-model="powerDate"
           type="date"
-          label="Event date"
+          label="Date"
           variant="outlined"
-          :disabled="!!preview || !!confirmResult"
-          style="flex: 1 1 0; min-width: 160px"
-        />
-        <v-text-field
-          v-model="totalAttendees"
-          type="number"
-          min="1"
-          label="Attended"
-          placeholder="Total amount of players attended(screenshot)"
-          variant="outlined"
-          required
-          :rules="[(v) => (!!v && Number(v) > 0) || 'Required, must be a number']"
           :disabled="!!preview || !!confirmResult"
           style="flex: 1 1 0; min-width: 160px"
         />
@@ -203,31 +165,39 @@ function reset() {
         />
       </div>
 
-      <!-- REVIEW MATCHED NAMES -->
+      <!-- REVIEW MATCHED NAMES + POWER -->
       <div v-else-if="preview">
         <div class="d-flex ga-4 mt-3">
           <div style="flex: 1 1 0; min-width: 0">
-            <p class="text-subtitle-2 mb-1 ml-4 text-info">Unmatched lines ({{ preview.unmatched_lines?.length ?? 0 }})</p>
+            <p class="text-subtitle-2 mb-1 ml-4 text-info">Unmatched rows ({{ preview.unmatched_rows?.length ?? 0 }})</p>
             <v-list density="compact">
-              <v-list-item v-for="(line, i) in preview.unmatched_lines" :key="i">
-                {{ line }}
+              <v-list-item v-for="(row, i) in preview.unmatched_rows" :key="i">
+                {{ row }}
               </v-list-item>
             </v-list>
           </div>
-          <div style="flex: 1 1 0; min-width: 0">
+          <div style="flex: 2 1 0; min-width: 0">
             <p class="text-subtitle-2 mb-1 ml-5 text-success">Matched players ({{ includedCount }})</p>
-            <p class="text-caption text-grey-darken-1 mb-1 ml-5">Double check the player matching, values may not always be true!</p>
-            <v-alert v-if="preview.total_attendees - includedCount !== 0" type="warning" density="compact" variant="tonal" closable class="ma-3">
-              {{ preview.total_attendees - includedCount }} attendees not matched
-            </v-alert>
-            <v-list density="compact">
-              <v-list-item v-for="m in preview.matched" :key="m.player_id">
-                <template #prepend>
-                  <v-checkbox-btn v-model="included[m.player_id]" />
-                </template>
-                {{ m.alias ?? m.player_id }} ({{ m.player_id }}) — OCR: "{{ m.matched_by_name }}"
-              </v-list-item>
-            </v-list>
+            <p class="text-caption text-grey-darken-1 mb-1 ml-5">Double check the player matching and power values, they may not always be true!</p>
+            <div class="matched-table ml-2 mb-5">
+              <div class="matched-row" v-for="m in preview.matched" :key="m.player_id">
+                <div class="matched-name-cell">
+                  <v-checkbox-btn v-model="included[m.player_id]" class="flex-grow-0" />
+                  <span>{{ m.alias ?? m.player_id }} ({{ m.player_id }}) — OCR: "{{ m.matched_by_name }}"</span>
+                </div>
+                <div class="matched-power-cell">
+                  <v-text-field
+                    v-model="power[m.player_id]"
+                    type="number"
+                    min="1"
+                    density="compact"
+                    variant="plain"
+                    hide-details
+                    class="power-input"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -246,10 +216,7 @@ function reset() {
       <!-- CONFIRM RESULT -->
       <div v-else-if="confirmResult">
         <v-alert type="success" density="compact" closable class="mb-3">
-          {{ confirmResult.added.length }} added, {{ confirmResult.already_registered.length }} already registered.
-        </v-alert>
-        <v-alert v-if="confirmResult.conflicts?.length" type="warning" density="compact" closable class="mb-3">
-          Conflicts (already registered in another legion): {{ confirmResult.conflicts.map(c => c.alias).join(', ') }}
+          {{ confirmResult.added.length }} added, {{ confirmResult.updated.length }} updated.
         </v-alert>
         <v-alert v-if="confirmResult.unknown_player_ids?.length" type="error" density="compact" closable class="mb-3">
           Unknown player IDs: {{ confirmResult.unknown_player_ids.join(', ') }}
@@ -267,3 +234,32 @@ function reset() {
     />
   </div>
 </template>
+
+<style scoped>
+.matched-table {
+  display: grid;
+  grid-template-columns: max-content 140px;
+  column-gap: 36px;
+  row-gap: 4px;
+}
+
+.matched-row {
+  display: contents;
+}
+
+.matched-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  min-width: 0;
+}
+
+.matched-power-cell {
+  width: 140px;
+}
+
+.power-input :deep(input) {
+  text-align: right;
+}
+</style>

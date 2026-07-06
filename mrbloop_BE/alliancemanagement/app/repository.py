@@ -160,6 +160,31 @@ async def update_server(player_id: str, server: str) -> None:
             )
 
 
+async def get_last_refresh() -> dict | None:
+    async with get_pool().acquire() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                "SELECT finished_at, total, changed_count FROM am_refresh_log WHERE id = 1"
+            )
+            return await cur.fetchone()
+
+
+async def save_refresh_log(finished_at: datetime, total: int, changed_count: int) -> None:
+    async with get_pool().acquire() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                """
+                INSERT INTO am_refresh_log (id, finished_at, total, changed_count)
+                VALUES (1, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    finished_at = VALUES(finished_at),
+                    total = VALUES(total),
+                    changed_count = VALUES(changed_count)
+                """,
+                (finished_at, total, changed_count),
+            )
+
+
 async def get_members_for_matching() -> list[dict]:
     async with get_pool().acquire() as conn:
         async with conn.cursor() as cur:
@@ -203,7 +228,7 @@ async def list_events(event_type, legion, date_from, date_to) -> list[dict]:
         async with conn.cursor() as cur:
             await cur.execute(
                 f"""
-                SELECT e.event_id, e.event_type, e.legion, e.event_date, e.created_at,
+                SELECT e.event_id, e.event_type, e.legion, e.event_date, e.total_attendees, e.created_at,
                        COUNT(a.player_id) AS attendee_count
                 FROM am_events e
                 LEFT JOIN am_event_attendance a ON a.event_id = e.event_id
@@ -220,7 +245,7 @@ async def get_event(event_id: int) -> dict | None:
     async with get_pool().acquire() as conn:
         async with conn.cursor() as cur:
             await cur.execute(
-                "SELECT event_id, event_type, legion, event_date, created_at FROM am_events WHERE event_id = %s",
+                "SELECT event_id, event_type, legion, event_date, total_attendees, created_at FROM am_events WHERE event_id = %s",
                 (event_id,),
             )
             return await cur.fetchone()
@@ -236,14 +261,23 @@ async def find_event(event_type: str, legion: str, event_date) -> dict | None:
             return await cur.fetchone()
 
 
-async def create_event(event_type: str, legion: str, event_date) -> int:
+async def create_event(event_type: str, legion: str, event_date, total_attendees: int) -> int:
     async with get_pool().acquire() as conn:
         async with conn.cursor() as cur:
             await cur.execute(
-                "INSERT INTO am_events (event_type, legion, event_date) VALUES (%s, %s, %s)",
-                (event_type, legion, event_date),
+                "INSERT INTO am_events (event_type, legion, event_date, total_attendees) VALUES (%s, %s, %s, %s)",
+                (event_type, legion, event_date, total_attendees),
             )
             return cur.lastrowid
+
+
+async def update_event_total_attendees(event_id: int, total_attendees: int) -> None:
+    async with get_pool().acquire() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                "UPDATE am_events SET total_attendees = %s WHERE event_id = %s",
+                (total_attendees, event_id),
+            )
 
 
 async def delete_event(event_id: int) -> None:
@@ -340,15 +374,159 @@ async def remove_attendance(event_id: int, player_id: str) -> None:
             )
 
 
+# ─── Member power ────────────────────────────────────────────────────────────
+
+async def get_power_for_date(player_ids: list[str], power_date) -> list[dict]:
+    """Existing am_memberpower rows for these players on this date."""
+    if not player_ids:
+        return []
+    placeholders = ", ".join(["%s"] * len(player_ids))
+    async with get_pool().acquire() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                f"""
+                SELECT player_id, power FROM am_memberpower
+                WHERE power_date = %s AND player_id IN ({placeholders})
+                """,
+                [power_date, *player_ids],
+            )
+            return await cur.fetchall()
+
+
+async def upsert_member_power(
+    player_id: str, power_date, power: int, matched_by_name: str | None
+) -> None:
+    async with get_pool().acquire() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                """
+                INSERT INTO am_memberpower (player_id, power_date, power, matched_by_name)
+                VALUES (%s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    power = VALUES(power),
+                    matched_by_name = VALUES(matched_by_name)
+                """,
+                (player_id, power_date, power, matched_by_name),
+            )
+
+
+def _power_filters(date_from, date_to) -> tuple[str, list]:
+    conditions = []
+    params: list = []
+    if date_from:
+        conditions.append("power_date >= %s")
+        params.append(date_from)
+    if date_to:
+        conditions.append("power_date <= %s")
+        params.append(date_to)
+    where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+    return where, params
+
+
+async def power_dates(date_from, date_to) -> list[dict]:
+    """Distinct power_date values recorded in the window, oldest first."""
+    where, params = _power_filters(date_from, date_to)
+    async with get_pool().acquire() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                f"SELECT DISTINCT power_date FROM am_memberpower {where} ORDER BY power_date",
+                params,
+            )
+            return await cur.fetchall()
+
+
+async def power_matrix(date_from, date_to, alliance_name) -> list[dict]:
+    """One row per (member, power_date) recorded in the window."""
+    conditions = []
+    params: list = []
+    if date_from:
+        conditions.append("p.power_date >= %s")
+        params.append(date_from)
+    if date_to:
+        conditions.append("p.power_date <= %s")
+        params.append(date_to)
+    if alliance_name:
+        conditions.append("m.alliance_name = %s")
+        params.append(alliance_name)
+    where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+
+    async with get_pool().acquire() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                f"""
+                SELECT p.player_id, p.power_date, p.power
+                FROM am_memberpower p
+                JOIN am_members m ON m.player_id = p.player_id
+                {where}
+                """,
+                params,
+            )
+            return await cur.fetchall()
+
+
 # ─── Statistics ──────────────────────────────────────────────────────────────
 
 async def count_events(event_type, legion, date_from, date_to) -> int:
+    """Distinct (event_type, event_date) sessions — Legion 1/2 are the same session."""
     where, params = _event_filters(event_type, legion, date_from, date_to)
     async with get_pool().acquire() as conn:
         async with conn.cursor() as cur:
-            await cur.execute(f"SELECT COUNT(*) AS total FROM am_events e {where}", params)
+            await cur.execute(
+                f"SELECT COUNT(DISTINCT event_type, event_date) AS total FROM am_events e {where}",
+                params,
+            )
             row = await cur.fetchone()
             return row["total"]
+
+
+async def event_sessions(event_type, date_from, date_to) -> list[dict]:
+    """Distinct (event_type, event_date) sessions in the window, most recent first."""
+    where, params = _event_filters(event_type, None, date_from, date_to)
+    async with get_pool().acquire() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                f"""
+                SELECT DISTINCT e.event_type, e.event_date
+                FROM am_events e
+                {where}
+                ORDER BY e.event_date DESC, e.event_type
+                """,
+                params,
+            )
+            return await cur.fetchall()
+
+
+async def attendance_matrix(event_type, date_from, date_to, alliance_name) -> list[dict]:
+    """One row per (member, session) attended: which legion they joined that day."""
+    conditions = []
+    params: list = []
+    if event_type:
+        conditions.append("e.event_type = %s")
+        params.append(event_type)
+    if date_from:
+        conditions.append("e.event_date >= %s")
+        params.append(date_from)
+    if date_to:
+        conditions.append("e.event_date <= %s")
+        params.append(date_to)
+    if alliance_name:
+        conditions.append("m.alliance_name = %s")
+        params.append(alliance_name)
+    where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+
+    async with get_pool().acquire() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                f"""
+                SELECT a.player_id, a.event_type, a.event_date, e.legion
+                FROM am_event_attendance a
+                JOIN am_events e ON e.event_id = a.event_id
+                JOIN am_members m ON m.player_id = a.player_id
+                {where}
+                """,
+                params,
+            )
+            return await cur.fetchall()
 
 
 async def attendance_counts(event_type, legion, date_from, date_to, alliance_name) -> list[dict]:

@@ -13,6 +13,13 @@ router = APIRouter(prefix="/members", tags=["members"])
 
 @router.post("/refresh-names", status_code=202)
 async def refresh_names():
+    cooldown_left = await name_sync.seconds_until_ready()
+    if cooldown_left > 0:
+        minutes_left = max(1, round(cooldown_left / 60))
+        raise HTTPException(
+            429, f"Refresh ran recently, try again in {minutes_left}m"
+        )
+
     started = await name_sync.start_refresh()
     if not started:
         raise HTTPException(409, "A refresh job is already running")
@@ -21,7 +28,9 @@ async def refresh_names():
 
 @router.get("/refresh-names/status")
 async def refresh_status():
-    return name_sync.state
+    last_refresh = await repository.get_last_refresh()
+    cooldown_left = await name_sync.seconds_until_ready()
+    return {**name_sync.state, "last_refresh": last_refresh, "cooldown_left": cooldown_left}
 
 
 # --- CRUD ---

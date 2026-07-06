@@ -4,7 +4,9 @@ Uses RapidOCR (ONNX runtime, pure pip install — no system Tesseract needed).
 The engine is CPU-bound, so it runs in a worker thread to keep the event loop
 free. Screenshots are never written to disk.
 
-Each line is a dict: {"text": "ShoNuff", "confidence": 0.97}
+Each line is a dict: {"text": "ShoNuff", "confidence": 0.97, "box": [[x, y], ...]}
+box is the quadrilateral RapidOCR detected the text in (4 [x, y] points),
+kept so callers can group lines into rows (see services/power_matching.py).
 """
 import asyncio
 import logging
@@ -30,8 +32,12 @@ def _run_ocr(image_bytes: bytes) -> list[dict]:
     if not result:
         return []
     return [
-        {"text": str(text), "confidence": float(score)}
-        for _, text, score in result
+        {
+            "text": str(text),
+            "confidence": float(score),
+            "box": [[float(x), float(y)] for x, y in box],
+        }
+        for box, text, score in result
     ]
 
 

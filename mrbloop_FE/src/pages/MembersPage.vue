@@ -14,6 +14,7 @@ const newMember = ref({ player_id: '', alias: '', alliance_name: '' })
 
 const refreshing = ref(false)
 const refreshStatus = ref(null)
+const lastRefresh = ref(null)
 let refreshPoll = null
 
 function formatDateTime(value) {
@@ -21,6 +22,20 @@ function formatDateTime(value) {
   const d = new Date(value)
   const pad = (n) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function formatRelative(value) {
+  if (!value) return 'never'
+  const hours = (Date.now() - new Date(value).getTime()) / 3_600_000
+  if (hours < 1) return 'less than an hour ago'
+  if (hours < 24) return `${Math.floor(hours)} hours ago`
+  return `${Math.floor(hours / 24)} days ago`
+}
+
+function staleColor(value) {
+  if (!value) return 'warning'
+  const hours = (Date.now() - new Date(value).getTime()) / 3_600_000
+  return hours >= 24 ? 'warning' : 'grey-darken-1'
 }
 
 const headers = [
@@ -108,6 +123,12 @@ async function createMember() {
   }
 }
 
+async function fetchRefreshStatus() {
+  const { data } = await api.get('/members/refresh-names/status')
+  refreshStatus.value = data
+  lastRefresh.value = data.last_refresh?.finished_at ?? null
+}
+
 async function startRefresh() {
   errorMsg.value = ''
   try {
@@ -127,12 +148,16 @@ function pollRefreshStatus() {
     if (!data.running) {
       clearInterval(refreshPoll)
       refreshing.value = false
+      lastRefresh.value = data.last_refresh?.finished_at ?? null
       fetchMembers()
     }
   }, 1500)
 }
 
-onMounted(fetchMembers)
+onMounted(() => {
+  fetchMembers()
+  fetchRefreshStatus()
+})
 </script>
 
 <template>
@@ -154,21 +179,25 @@ onMounted(fetchMembers)
       />
 
       <div class="d-flex ga-3 align-center justify-end mt-6">
-        <v-btn color="blue-darken-2" variant="outlined" @click="creating = true">
-          <v-icon start>mdi-plus</v-icon>
-            Add member
-          </v-btn>
+        <v-chip :color="staleColor(lastRefresh)" variant="tonal" size="small">
+          <v-icon start size="small">mdi-clock-outline</v-icon>
+          Refreshed names: {{ formatRelative(lastRefresh) }}
+        </v-chip>
+        <span v-if="refreshStatus?.running" class="text-caption text-grey-darken-1">
+          Refreshing names ({{ refreshStatus?.processed ?? 0 }}/{{ refreshStatus?.total ?? 0 }})…
+        </span>
         <v-btn
           color="blue-darken-3"
-          :loading="refreshing"
+          :loading="refreshing" variant="outlined"
           @click="startRefresh"
         >
           <v-icon start>mdi-refresh</v-icon>
-          Refresh names
-          <template v-if="refreshStatus?.running">
-            ({{ refreshStatus.done }}/{{ refreshStatus.total }})
-          </template>
+          Refresh run
         </v-btn>
+        <v-btn color="blue-darken-2" @click="creating = true">
+          <v-icon start>mdi-plus</v-icon>
+            Add member
+          </v-btn>
       </div>
     </template>
 

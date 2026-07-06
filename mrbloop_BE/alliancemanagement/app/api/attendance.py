@@ -33,9 +33,12 @@ async def preview_attendance(
     event_type: str = Form(...),
     legion: str = Form(...),
     event_date: date = Form(...),
+    total_attendees: int = Form(...),
     screenshots: list[UploadFile] = File(...),
 ):
     _check_event_fields(event_type, legion)
+    if total_attendees <= 0:
+        raise HTTPException(400, "total_attendees must be a positive number")
     if not screenshots:
         raise HTTPException(400, "At least one screenshot required")
 
@@ -62,6 +65,7 @@ async def preview_attendance(
         "event_type": event_type,
         "legion": legion,
         "event_date": event_date,
+        "total_attendees": total_attendees,
         "screenshots_processed": len(screenshots),
         "lines_read": len(all_lines),
         "candidates_considered": len(candidates),
@@ -82,6 +86,10 @@ async def confirm_attendance(body: dict):
     except ValueError:
         raise HTTPException(400, "event_date must be a date like 2026-07-02")
 
+    total_attendees = body.get("total_attendees")
+    if not isinstance(total_attendees, int) or isinstance(total_attendees, bool) or total_attendees <= 0:
+        raise HTTPException(400, "total_attendees must be a positive number")
+
     entries = body.get("entries")
     if not isinstance(entries, list) or not entries:
         raise HTTPException(400, "entries must be a non-empty list")
@@ -100,8 +108,9 @@ async def confirm_attendance(body: dict):
     event = await repository.find_event(event_type, legion, event_date)
     if event:
         event_id = event["event_id"]
+        await repository.update_event_total_attendees(event_id, total_attendees)
     else:
-        event_id = await repository.create_event(event_type, legion, event_date)
+        event_id = await repository.create_event(event_type, legion, event_date, total_attendees)
 
     # Which player_ids actually exist as members?
     rows = await repository.find_members(list(requested))
