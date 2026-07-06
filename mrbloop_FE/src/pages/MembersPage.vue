@@ -158,6 +158,8 @@ onMounted(() => {
   fetchMembers()
   fetchRefreshStatus()
 })
+
+defineExpose({ fetchMembers, fetchRefreshStatus })
 </script>
 
 <template>

@@ -79,6 +79,8 @@ async function removeAttendee(playerId) {
 }
 
 onMounted(fetchEvents)
+
+defineExpose({ fetchEvents })
 </script>
 
 <template>

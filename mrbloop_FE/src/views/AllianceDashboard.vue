@@ -1,11 +1,19 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import MembersPage from '../pages/MembersPage.vue'
 import RegistrationPage from '../pages/RegistrationPage.vue'
 import EventsPage from '../pages/EventsPage.vue'
 import StatsPage from '../pages/StatsPage.vue'
 
 const activeTab = ref('registration')
+
+const eventsPageRef = ref(null)
+const membersPageRef = ref(null)
+
+watch(activeTab, (tab) => {
+  if (tab === 'events') eventsPageRef.value?.fetchEvents()
+  if (tab === 'members') membersPageRef.value?.fetchMembers()
+})
 </script>
 
 <template>
@@ -30,11 +38,11 @@ const activeTab = ref('registration')
     </v-tabs-window-item>
 
     <v-tabs-window-item value="events">
-      <EventsPage />
+      <EventsPage ref="eventsPageRef" />
     </v-tabs-window-item>
 
     <v-tabs-window-item value="members">
-      <MembersPage />
+      <MembersPage ref="membersPageRef" />
     </v-tabs-window-item>
 
     <v-tabs-window-item value="stats">

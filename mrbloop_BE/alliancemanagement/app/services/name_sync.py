@@ -6,7 +6,7 @@ retry/backoff semantics mirroring redeemer.py.
 """
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 import httpx
 
@@ -95,7 +95,7 @@ async def _run_refresh(player_ids: list[str]) -> None:
                 await asyncio.sleep(INTER_ACCOUNT_DELAY)
     finally:
         state["running"] = False
-        state["finished_at"] = datetime.now()
+        state["finished_at"] = datetime.now(timezone.utc)
         await repository.save_refresh_log(
             state["finished_at"], state["total"], len(state["changed"])
         )
@@ -110,7 +110,7 @@ async def seconds_until_ready() -> float:
     last = await repository.get_last_refresh()
     if last is None:
         return 0
-    elapsed = (datetime.now() - last["finished_at"]).total_seconds()
+    elapsed = (datetime.now(timezone.utc) - last["finished_at"]).total_seconds()
     return max(0, COOLDOWN - elapsed)
 
 
@@ -120,7 +120,7 @@ async def start_refresh() -> bool:
         return False
     state.update(
         running=True, total=0, processed=0, changed=[], errors=[],
-        started_at=datetime.now(), finished_at=None,
+        started_at=datetime.now(timezone.utc), finished_at=None,
     )
     player_ids = await repository.get_all_player_ids()
     state["total"] = len(player_ids)

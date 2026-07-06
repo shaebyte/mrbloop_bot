@@ -4,7 +4,7 @@ Every function acquires a connection from the pool, runs its query and
 returns plain dicts (the pool uses DictCursor + autocommit).
 """
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.database import get_pool
 
@@ -166,7 +166,13 @@ async def get_last_refresh() -> dict | None:
             await cur.execute(
                 "SELECT finished_at, total, changed_count FROM am_refresh_log WHERE id = 1"
             )
-            return await cur.fetchone()
+            row = await cur.fetchone()
+            # MySQL DATETIME columns strip tzinfo; the value stored is always
+            # UTC wall-clock (see name_sync.py), so re-tag it before it's
+            # compared against an aware "now" or serialized to the frontend.
+            if row and row["finished_at"] is not None:
+                row["finished_at"] = row["finished_at"].replace(tzinfo=timezone.utc)
+            return row
 
 
 async def save_refresh_log(finished_at: datetime, total: int, changed_count: int) -> None:

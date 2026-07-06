@@ -66,6 +66,8 @@ async function fetchMatrix() {
 }
 
 onMounted(fetchMatrix)
+
+defineExpose({ fetchMatrix })
 </script>
 
 <template>
