@@ -8,17 +8,11 @@ const EVENT_TYPE_OPTIONS = [ALL, ...EVENT_TYPES]
 const EVENT_ABBR = { 'Swordland': 'SL', 'Tri-Alliance Clash': 'TAC' }
 const LEGION_COLOR = { 'Legion 1': 'primary', 'Legion 2': 'secondary' }
 
-function daysAgo(days) {
-  const d = new Date()
-  d.setDate(d.getDate() - days)
-  return d.toISOString().slice(0, 10)
-}
-
 const matrix = ref(null)
 const loading = ref(false)
 
 const filterEventType = ref(ALL)
-const filterDateFrom = ref(daysAgo(60))
+const filterDateFrom = ref(null)
 const filterDateTo = ref(null)
 
 const headers = computed(() => {

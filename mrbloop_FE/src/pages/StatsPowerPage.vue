@@ -39,8 +39,6 @@ async function fetchMatrix() {
       },
     })
     matrix.value = data
-    filterDateFrom.value = data.filters.date_from
-    filterDateTo.value = data.filters.date_to
   } catch (err) {
     console.error('fetchMatrix error:', err.response?.status, err.response?.data)
   } finally {

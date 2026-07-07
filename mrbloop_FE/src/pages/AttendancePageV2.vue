@@ -39,25 +39,29 @@ const preview = ref(null)
 const confirmResult = ref(null)
 const showUnmatchedLines = ref(false)
 
-// player_id -> included in submission (present list)
-const included = ref({})
-// player_id -> manually marked present despite no OCR match (absent list)
-const manualPresent = ref({})
+// player_id -> currently marked present (drives which table the row shows in)
+const present = ref({})
 
 const includedCount = computed(
-  () => Object.values(included.value).filter(Boolean).length +
-    Object.values(manualPresent.value).filter(Boolean).length
+  () => Object.values(present.value).filter(Boolean).length
 )
 
-const presentRows = computed(() => {
+const allRows = computed(() => {
   if (!preview.value) return []
-  return [...preview.value.matched].sort((a, b) => (a.alias ?? '').localeCompare(b.alias ?? ''))
+  return [...preview.value.matched, ...preview.value.members_not_found]
 })
 
-const absentRows = computed(() => {
-  if (!preview.value) return []
-  return [...preview.value.members_not_found].sort((a, b) => (a.alias ?? '').localeCompare(b.alias ?? ''))
-})
+const presentRows = computed(() =>
+  allRows.value
+    .filter((m) => present.value[m.player_id])
+    .sort((a, b) => (a.alias ?? '').localeCompare(b.alias ?? ''))
+)
+
+const absentRows = computed(() =>
+  allRows.value
+    .filter((m) => !present.value[m.player_id])
+    .sort((a, b) => (a.alias ?? '').localeCompare(b.alias ?? ''))
+)
 
 async function runPreview() {
   errorMsg.value = ''
@@ -100,8 +104,7 @@ async function doPreview() {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
     preview.value = data
-    included.value = Object.fromEntries(data.matched.map((m) => [m.player_id, true]))
-    manualPresent.value = {}
+    present.value = Object.fromEntries(data.matched.map((m) => [m.player_id, true]))
   } catch (err) {
     errorMsg.value = err.response?.data?.detail ?? 'Preview failed'
   } finally {
@@ -111,14 +114,9 @@ async function doPreview() {
 
 async function confirm() {
   errorMsg.value = ''
-  const entries = [
-    ...preview.value.matched
-      .filter((m) => included.value[m.player_id])
-      .map((m) => ({ player_id: m.player_id, matched_by_name: m.matched_by_name })),
-    ...preview.value.members_not_found
-      .filter((m) => manualPresent.value[m.player_id])
-      .map((m) => ({ player_id: m.player_id, matched_by_name: null })),
-  ]
+  const entries = allRows.value
+    .filter((m) => present.value[m.player_id])
+    .map((m) => ({ player_id: m.player_id, matched_by_name: m.matched_by_name ?? null }))
 
   if (!entries.length) {
     errorMsg.value = 'No members selected'
@@ -275,7 +273,7 @@ function reset() {
                     <td class="alias-cell">{{ m.alias ?? m.player_id }}</td>
                     <td class="match-cell">
                       <div class="match-cell-content">
-                        <v-checkbox-btn v-model="included[m.player_id]" class="flex-grow-0" />
+                        <v-checkbox-btn v-model="present[m.player_id]" class="flex-grow-0" />
                         <span class="text-success">{{ m.matched_by_name }}</span>
                       </div>
                     </td>
@@ -303,7 +301,7 @@ function reset() {
                     <td class="ingame-name-cell">{{ m.ingame_name }}</td>
                     <td class="match-cell">
                       <div class="match-cell-content">
-                        <v-checkbox-btn v-model="manualPresent[m.player_id]" class="flex-grow-0" />
+                        <v-checkbox-btn v-model="present[m.player_id]" class="flex-grow-0" />
                       </div>
                     </td>
                   </tr>
@@ -336,7 +334,7 @@ function reset() {
         <v-alert v-if="confirmResult.unknown_player_ids?.length" type="error" density="compact" closable class="mb-3">
           Unknown player IDs: {{ confirmResult.unknown_player_ids.join(', ') }}
         </v-alert>
-        <v-btn color="bloop-blue" @click="reset">New upload</v-btn>
+        <v-btn color="#18a4ff" @click="reset">New upload</v-btn>
       </div>
 
     <NameRefreshDialog

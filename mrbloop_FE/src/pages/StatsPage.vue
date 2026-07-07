@@ -12,6 +12,13 @@ watch(activeSubTab, (tab) => {
   if (tab === 'events') statsEventsRef.value?.fetchMatrix()
   if (tab === 'power') statsPowerRef.value?.fetchMatrix()
 })
+
+function refresh() {
+  if (activeSubTab.value === 'events') statsEventsRef.value?.fetchMatrix()
+  if (activeSubTab.value === 'power') statsPowerRef.value?.fetchMatrix()
+}
+
+defineExpose({ refresh })
 </script>
 
 <template>

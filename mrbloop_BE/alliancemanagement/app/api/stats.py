@@ -9,7 +9,7 @@ from app.constants import EVENT_TYPES, LEGIONS
 
 router = APIRouter(prefix="/stats", tags=["stats"])
 
-DEFAULT_POWER_WINDOW_DAYS = 30 * 4
+DEFAULT_STATS_WINDOW_DAYS = 60
 
 
 @router.get("/attendance")
@@ -66,6 +66,10 @@ async def attendance_matrix(
     if event_type and event_type not in EVENT_TYPES:
         raise HTTPException(400, f"event_type must be one of: {', '.join(EVENT_TYPES)}")
 
+    if not date_from and not date_to:
+        date_to = date.today()
+        date_from = date_to - timedelta(days=DEFAULT_STATS_WINDOW_DAYS)
+
     sessions = await repository.event_sessions(event_type, date_from, date_to)
     records = await repository.attendance_matrix(event_type, date_from, date_to, alliance_name)
     members = await repository.list_members(alliance_name, None)
@@ -94,6 +98,12 @@ async def attendance_matrix(
         "sessions": [
             {"event_type": s["event_type"], "event_date": str(s["event_date"])} for s in sessions
         ],
+        "filters": {
+            "event_type": event_type,
+            "date_from": str(date_from) if date_from else None,
+            "date_to": str(date_to) if date_to else None,
+            "alliance_name": alliance_name,
+        },
         "members": rows,
     }
 
@@ -106,11 +116,11 @@ async def power_matrix(
 ):
     """Per member, per recorded power_date: the power value.
 
-    Defaults to the last 4 months when no dates are given.
+    Defaults to the last 60 days when no dates are given.
     """
     if not date_from and not date_to:
         date_to = date.today()
-        date_from = date_to - timedelta(days=DEFAULT_POWER_WINDOW_DAYS)
+        date_from = date_to - timedelta(days=DEFAULT_STATS_WINDOW_DAYS)
 
     dates = await repository.power_dates(date_from, date_to)
     records = await repository.power_matrix(date_from, date_to, alliance_name)

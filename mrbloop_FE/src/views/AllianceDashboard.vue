@@ -9,10 +9,12 @@ const activeTab = ref('registration')
 
 const eventsPageRef = ref(null)
 const membersPageRef = ref(null)
+const statsPageRef = ref(null)
 
 watch(activeTab, (tab) => {
   if (tab === 'events') eventsPageRef.value?.fetchEvents()
   if (tab === 'members') membersPageRef.value?.fetchMembers()
+  if (tab === 'stats') statsPageRef.value?.refresh()
 })
 </script>
 
@@ -46,7 +48,7 @@ watch(activeTab, (tab) => {
     </v-tabs-window-item>
 
     <v-tabs-window-item value="stats">
-      <StatsPage />
+      <StatsPage ref="statsPageRef" />
     </v-tabs-window-item>
   </v-tabs-window>
 </template>
