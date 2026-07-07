@@ -16,6 +16,9 @@ __pycache__/
 node_modules/
 dist/
 
+# DB backups
+mrbloop_db/backups/
+
 # Claude
 CLAUDE.md
 CMD_COMMANDS.txt

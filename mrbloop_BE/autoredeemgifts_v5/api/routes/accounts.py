@@ -36,7 +36,8 @@ async def create_account(request: Request, body: AccountCreate, db=Depends(get_d
     return {"player_id": body.player_id}
 
 @router.get("/validate/{player_id}")
-async def validate_player(player_id: str):
+@limiter.limit("10/minute")
+async def validate_player(request: Request, player_id: str):
     try:
         data = await fetch_player_info(player_id, REDEEM_API)
         return data

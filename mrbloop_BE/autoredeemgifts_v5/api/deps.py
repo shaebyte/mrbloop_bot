@@ -1,23 +1,5 @@
 import aiomysql
-from app.config import DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME
-
-_pool: aiomysql.Pool | None = None
-
-
-async def _get_pool() -> aiomysql.Pool:
-    global _pool
-    if _pool is None:
-        _pool = await aiomysql.create_pool(
-            host=DB_HOST,
-            port=DB_PORT,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            db=DB_NAME,
-            minsize=1,
-            maxsize=10,
-            autocommit=False,
-        )
-    return _pool
+from app.database import get_pool
 
 
 class _CursorResult:
@@ -52,7 +34,6 @@ class _DB:
 
 
 async def get_db():
-    pool = await _get_pool()
-    async with pool.acquire() as conn:
+    async with get_pool().acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
             yield _DB(conn, cur)

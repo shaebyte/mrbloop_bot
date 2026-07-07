@@ -39,7 +39,7 @@ async def _login(client: httpx.AsyncClient, player_id: str, api_base: str) -> di
 async def fetch_player_info(player_id: str, api_base: str) -> dict:
     async with httpx.AsyncClient() as client:
         result = await _login(client, player_id, api_base)
-    print("RAW RESULT:", result)
+    logger.debug("fetch_player_info(%s) raw result: %s", player_id, result)
 
     if result.get("code") != 0:
         raise ValueError(result.get("msg", "Player not found"))
