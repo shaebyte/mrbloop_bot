@@ -5,7 +5,7 @@ logger = logging.getLogger(__name__)
 
 
 class GuildRepository:
-    """Guild-identiteit + generieke feature-toggles, gedeeld door alle features."""
+    """Guild identity + generic feature toggles, shared by all features."""
 
     async def upsert_guild(self, guild_id: int, guild_name: str) -> None:
         async with get_pool().acquire() as conn:
@@ -13,8 +13,8 @@ class GuildRepository:
                 await cur.execute(
                     """
                     INSERT INTO dbot_guilds (guild_id, guild_name, is_active)
-                    VALUES (%s, %s, 1)
-                    ON DUPLICATE KEY UPDATE guild_name = VALUES(guild_name), is_active = 1
+                    VALUES (%s, %s, 1) AS new
+                    ON DUPLICATE KEY UPDATE guild_name = new.guild_name, is_active = new.is_active
                     """,
                     (guild_id, guild_name),
                 )
@@ -57,8 +57,8 @@ class GuildRepository:
                 await cur.execute(
                     """
                     INSERT INTO dbot_guild_features (guild_id, feature_key, enabled, channel_id)
-                    VALUES (%s, %s, 1, %s)
-                    ON DUPLICATE KEY UPDATE channel_id = VALUES(channel_id), enabled = 1
+                    VALUES (%s, %s, 1, %s) AS new
+                    ON DUPLICATE KEY UPDATE channel_id = new.channel_id, enabled = new.enabled
                     """,
                     (guild_id, feature_key, channel_id),
                 )
@@ -69,14 +69,14 @@ class GuildRepository:
                 await cur.execute(
                     """
                     INSERT INTO dbot_guild_features (guild_id, feature_key, enabled)
-                    VALUES (%s, %s, %s)
-                    ON DUPLICATE KEY UPDATE enabled = VALUES(enabled)
+                    VALUES (%s, %s, %s) AS new
+                    ON DUPLICATE KEY UPDATE enabled = new.enabled
                     """,
                     (guild_id, feature_key, enabled),
                 )
 
     async def get_guilds_with_feature_enabled(self, feature_key: str) -> list[dict]:
-        """Voor scheduled jobs: gebruikt idx_feature_enabled i.p.v. een full scan."""
+        """For scheduled jobs: uses idx_feature_enabled instead of a full scan."""
         async with get_pool().acquire() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(

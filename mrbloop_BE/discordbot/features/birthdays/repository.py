@@ -14,11 +14,11 @@ class BirthdayRepository:
                 await cur.execute(
                     """
                     INSERT INTO dbot_users (user_id, birth_month, birth_day, region)
-                    VALUES (%s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s) AS new
                     ON DUPLICATE KEY UPDATE
-                        birth_month = VALUES(birth_month),
-                        birth_day   = VALUES(birth_day),
-                        region      = VALUES(region)
+                        birth_month = new.birth_month,
+                        birth_day   = new.birth_day,
+                        region      = new.region
                     """,
                     (user_id, birth_month, birth_day, region),
                 )
