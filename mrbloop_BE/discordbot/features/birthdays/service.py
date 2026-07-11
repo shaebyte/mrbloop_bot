@@ -28,14 +28,17 @@ class BirthdayService:
             try:
                 await self._process_entry(entry)
             except Exception as exc:
-                logger.error("Error processing entry id=%s: %s", entry.get("id"), exc, exc_info=True)
+                logger.error(
+                    "Error processing entry user=%s guild=%s: %s",
+                    entry.get("user_id"), entry.get("guild_id"), exc, exc_info=True,
+                )
 
     async def _process_entry(self, entry: dict) -> None:
         guild = self.bot.get_guild(entry["guild_id"])
         if not guild:
             return
 
-        channel = await self._resolve_channel(guild, entry.get("birthday_channel_id"))
+        channel = await self._resolve_channel(guild, entry.get("channel_id"))
         if not channel:
             return
 
@@ -44,8 +47,8 @@ class BirthdayService:
             return
 
         await self._send_birthday_message(channel, member)
-        await self.repo.mark_greeted(entry["id"], entry["_greet_year"])
-        logger.info("Congratulated: %s in %s (region=%s)", member.display_name, guild.name, entry["region"])
+        await self.repo.mark_greeted(entry["user_id"], entry["guild_id"], entry["_greet_year"])
+        logger.info("Congratulated: %s in %s", member.display_name, guild.name)
 
     async def _resolve_channel(
         self, guild: discord.Guild, channel_id: int | None

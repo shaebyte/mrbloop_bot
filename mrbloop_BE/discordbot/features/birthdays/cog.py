@@ -6,7 +6,8 @@ from discord import app_commands
 from discord.ext import commands
 
 from utils import Region, REGION_LABELS
-from .repository import BirthdayRepository
+from core.guild_repository import GuildRepository
+from .repository import BirthdayRepository, FEATURE_KEY
 from .service import BirthdayService
 
 logger = logging.getLogger(__name__)
@@ -24,10 +25,17 @@ REGION_CHOICES = [
 
 
 class BirthdayCog(commands.GroupCog, name="birthday"):
-    def __init__(self, bot: commands.Bot, service: BirthdayService, repo: BirthdayRepository):
+    def __init__(
+        self,
+        bot: commands.Bot,
+        service: BirthdayService,
+        repo: BirthdayRepository,
+        guild_repo: GuildRepository,
+    ):
         self.bot = bot
         self.service = service
         self.repo = repo
+        self.guild_repo = guild_repo
         super().__init__()
 
     @app_commands.command(name="set", description="Save your birthday information.")
@@ -53,14 +61,13 @@ class BirthdayCog(commands.GroupCog, name="birthday"):
             )
             return
 
-        await self.repo.upsert_guild(interaction.guild_id, interaction.guild.name)
         await self.repo.set_birthday(
             user_id=interaction.user.id,
-            guild_id=interaction.guild_id,
             birth_month=month.value,
             birth_day=day,
             region=region.value,
         )
+        await self.repo.opt_in(interaction.user.id, interaction.guild_id)
 
         await interaction.followup.send(
             f"✅ Your birthday has been saved: **{day} {month.name}** "
@@ -68,22 +75,22 @@ class BirthdayCog(commands.GroupCog, name="birthday"):
             ephemeral=True,
         )
 
-    @app_commands.command(name="delete", description="Delete your birthday information.")
+    @app_commands.command(name="delete", description="Stop receiving birthday greetings in this server.")
     async def delete_birthday(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
-        deleted = await self.repo.delete_birthday(interaction.user.id, interaction.guild_id)
+        deleted = await self.repo.opt_out(interaction.user.id, interaction.guild_id)
         if deleted:
-            await interaction.followup.send("🗑️ Your birthday has been deleted.", ephemeral=True)
+            await interaction.followup.send("🗑️ You will no longer be greeted in this server.", ephemeral=True)
         else:
             await interaction.followup.send(
-                "❌ I don't have your birthday saved. Use `/birthday set` to add it.",
+                "❌ I don't have your birthday saved here. Use `/birthday set` to add it.",
                 ephemeral=True,
             )
 
     @app_commands.command(name="view", description="View your saved birthday.")
     async def view_birthday(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
-        entry = await self.repo.get_birthday(interaction.user.id, interaction.guild_id)
+        entry = await self.repo.get_birthday(interaction.user.id)
 
         if not entry:
             await interaction.followup.send(
@@ -103,8 +110,7 @@ class BirthdayCog(commands.GroupCog, name="birthday"):
     @app_commands.checks.has_permissions(manage_guild=True)
     async def set_channel(self, interaction: discord.Interaction, channel: discord.TextChannel) -> None:
         await interaction.response.defer(ephemeral=True)
-        await self.repo.upsert_guild(interaction.guild_id, interaction.guild.name)
-        await self.repo.set_birthday_channel(interaction.guild_id, channel.id)
+        await self.guild_repo.set_feature_channel(interaction.guild_id, FEATURE_KEY, channel.id)
         await interaction.followup.send(
             f"✅ Birthday messages will now be sent to {channel.mention}.", ephemeral=True
         )
@@ -115,4 +121,3 @@ class BirthdayCog(commands.GroupCog, name="birthday"):
             await interaction.response.send_message(
                 "❌ You need **Manage Server** permissions to use this command.", ephemeral=True
             )
-            

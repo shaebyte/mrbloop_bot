@@ -7,6 +7,7 @@ import discord
 from discord.ext import commands
 
 from core.db import create_pool, close_pool
+from core.guild_repository import GuildRepository
 from core.scheduler import BotScheduler
 from config import settings
 from features.birthdays import BirthdayCog, BirthdayService, BirthdayRepository
@@ -26,13 +27,14 @@ class MrBloopBot(commands.Bot):
         )
 
         self.scheduler = BotScheduler()
+        self.guild_repo = GuildRepository()
         self.birthday_repo = BirthdayRepository()
         self.birthday_service = BirthdayService(self, self.birthday_repo)
 
     async def setup_hook(self) -> None:
         logger.info("Loading cogs...")
         await self.add_cog(
-            BirthdayCog(self, self.birthday_service, self.birthday_repo)
+            BirthdayCog(self, self.birthday_service, self.birthday_repo, self.guild_repo)
         )
         await self.tree.sync()
         logger.info("Slash commands synced")
@@ -43,7 +45,7 @@ class MrBloopBot(commands.Bot):
         await create_pool()
 
         for guild in self.guilds:
-            await self.birthday_repo.upsert_guild(guild.id, guild.name)
+            await self.guild_repo.upsert_guild(guild.id, guild.name)
 
         self.scheduler.add_birthday_jobs(self.birthday_service.check_and_greet_birthdays)
         self.scheduler.start()
@@ -53,8 +55,12 @@ class MrBloopBot(commands.Bot):
         )
 
     async def on_guild_join(self, guild: discord.Guild) -> None:
-        await self.birthday_repo.upsert_guild(guild.id, guild.name)
+        await self.guild_repo.upsert_guild(guild.id, guild.name)
         logger.info("New server: %s (%s)", guild.name, guild.id)
+
+    async def on_guild_remove(self, guild: discord.Guild) -> None:
+        await self.guild_repo.deactivate_guild(guild.id)
+        logger.info("Left server: %s (%s)", guild.name, guild.id)
 
     async def close(self) -> None:
         logger.info("Bot is closing...")
